@@ -113,3 +113,23 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+
+## Compliance, UX, and Operational Requirements *(mandatory)*
+
+### PDPA & Security
+
+- Consent flow: Describe how users grant, revoke, and trigger deletion (≤48h) before accessing the feature.
+- Data minimization: Explain GPS rounding (3 decimals), email masking, Supabase RLS scopes, and retention timelines (images 12 months, metadata per policy).
+- Secrets & configuration: Document required GitHub environment variables and dummy `.env.example` placeholders; no hardcoded credentials.
+
+### UX & Localization
+
+- Map the CB UX triad: Capture → Review → Submit ≤3 taps, ≥99% offline success, and explicit state visibility (Queued, Uploading, Failed, Approved).
+- Detail UI states (Empty, Loading, Success, Error, Offline) with EN/TH i18n keys; note accessibility considerations.
+- Clarify how roles (Organization → Site → Admin → Operator → Viewer) experience the feature.
+
+### KPI & Observability Mapping
+
+- Identify which KPIs/SLA budgets this feature moves (FPRR ≥90%, API P95 ≤3s, rollback ≤10m, etc.).
+- Specify metrics, logs `{ts, opId, code, duration_ms}`, dashboards, and `/reports/vision-bench.json` updates needed.
+- Outline CI/CD hooks (Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy) and rollback validation steps.
