@@ -42,6 +42,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 2. Maintain weekly Product/Platform/Experience triads, bi-weekly ops review, monthly compliance audit.
 3. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + Spectral, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
 4. Git discipline: `main` (prod), `develop` (staging), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages.
+- Branch workflow: `main` and `develop` are protected; working branches follow the spec-kit naming convention (`NNN-some-spec`, e.g., `001-lowcost-cicd-infra`). Branch from `develop`, complete spec tasks, and merge back via reviewed PRs.
 5. CLI & documentation outputs: code/comments English; CLI summaries Korean; tests and commands shared with teammates must be runnable verbatim.
 
 ---

@@ -50,6 +50,12 @@ Container Base replaces manual container logging with automated recognition, GPS
 
 ## Deployment
 
+### Branch Workflow
+- `main`: Production branch (protected). Only release-ready changes merge here.
+- `develop`: Staging branch (protected). Integrates validated spec branches before release.
+- `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `001-lowcost-cicd-infra`). Create from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
+- Never commit directly to protected branches; always open a PR from your spec branch.
+
 ### CI / CD Pipeline
 - GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → Spectral → Build → GHCR push.
 - Deployment workflows (`deploy-api.yml`, `deploy-ocr.yml`, `deploy-portal.yml`) publish Cloud Run/Vercel artifacts. Staging auto deploys on `develop`; production requires manual approval and tag selection.
