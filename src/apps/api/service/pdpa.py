@@ -1,10 +1,10 @@
 """PDPA enforcement helpers for the Container Base API."""
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional, Tuple, Union
+from collections.abc import Mapping
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
-
 
 __all__ = [
     "ConsentMissingError",
@@ -24,10 +24,10 @@ class ConsentRecord(BaseModel):
 
     user_id: str = Field(..., min_length=1)
     consented_at: str = Field(..., min_length=1)
-    revoked_at: Optional[str] = None
+    revoked_at: str | None = None
 
 
-ConsentInput = Union[ConsentRecord, Mapping[str, Any]]
+ConsentInput = ConsentRecord | Mapping[str, Any]
 
 
 def _coerce_record(record: ConsentInput) -> ConsentRecord:
@@ -42,7 +42,7 @@ def _coerce_record(record: ConsentInput) -> ConsentRecord:
         raise ConsentMissingError("Consent record is malformed") from exc
 
 
-def require_consent(record: Optional[ConsentInput]) -> ConsentRecord:
+def require_consent(record: ConsentInput | None) -> ConsentRecord:
     """Validate PDPA consent before allowing access and return the normalized record."""
 
     if record is None:
@@ -66,7 +66,7 @@ def mask_email(email: str) -> str:
     return f"***@{domain}"
 
 
-def round_gps(latitude: float, longitude: float) -> Tuple[float, float]:
+def round_gps(latitude: float, longitude: float) -> tuple[float, float]:
     """Round GPS coordinates to three decimals for PDPA compliance."""
 
     return (round(latitude, 3), round(longitude, 3))

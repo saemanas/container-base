@@ -1,7 +1,7 @@
-"""PDPA utilities for the OCR worker service."""
+"""PDPA credential validation for the OCR worker."""
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
 
 from pydantic import BaseModel, Field, ValidationError
 
