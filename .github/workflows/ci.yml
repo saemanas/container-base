@@ -122,8 +122,9 @@ jobs:
           key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
       - name: Install portal dependencies
-        working-directory: ${{ env.PORTAL_DIR }}
-        run: npm install --include=dev
+        run: |
+          npm install --include=dev
+          npm install --workspace ${{ env.PORTAL_DIR }} --include=dev
 
       - name: Run ESLint
         run: |
@@ -178,7 +179,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/openapi_lint
-          npx redocly lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
+          npx --yes @redocly/cli@2.11.0 lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
 
       - name: Diff OpenAPI contract against base
         run: |
@@ -197,7 +198,7 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            npx redocly diff \
+            npx --yes @redocly/cli@2.11.0 diff \
               artifacts/ci/openapi_lint/base-openapi.yaml \
               "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
