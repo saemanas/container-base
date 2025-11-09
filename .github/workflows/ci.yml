@@ -46,14 +46,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: src/apps/${{ matrix.app }}/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Restore Next.js build cache
         if: ${{ matrix.app == 'portal' }}
         uses: actions/cache@v4
         with:
           path: src/apps/${{ matrix.app }}/.next/cache
-          key: ${{ runner.os }}-next-cache-${{ hashFiles(format('src/apps/{0}/package-lock.json', matrix.app)) }}
+          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies (if package.json present)
         run: |
