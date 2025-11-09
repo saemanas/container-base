@@ -15,11 +15,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, List, Sequence
-import sys
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 OBS_DOC = ROOT_DIR / "docs" / "deployment" / "observability.md"
@@ -115,15 +116,35 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Summarize free-tier quota usage")
     parser.add_argument("--source", type=Path, default=None, help="JSON file containing quota usage data")
     parser.add_argument("--append", action="store_true", help="Append a markdown summary to observability doc")
+    parser.add_argument("--artifact-dir", type=Path, default=Path("artifacts/quotas"), help="Directory to store quota summary artifacts")
+    parser.add_argument("--op-id", default="quota-summary", help="Operational identifier for structured log")
     args = parser.parse_args()
 
     quotas = load_usage(args.source)
     summary = [quota.to_dict() for quota in quotas]
-    json.dump({"generated_at": datetime.utcnow().isoformat(), "quotas": summary}, fp=sys.stdout)
+    generated_at = datetime.now(timezone.utc).isoformat()
+    response = {"generated_at": generated_at, "quotas": summary}
+    json.dump(response, fp=sys.stdout)
     sys.stdout.write("\n")
 
     if args.append:
         append_markdown(quotas)
+
+    artifact_dir = args.artifact_dir
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+    run_id = os.environ.get("GITHUB_RUN_ID", "local")
+    artifact_path = artifact_dir / f"{args.op_id}-{run_id}.json"
+    artifact_path.write_text(json.dumps(response, indent=2), encoding="utf-8")
+
+    structured_log = {
+        "ts": generated_at,
+        "opId": args.op_id,
+        "code": "quota-summary",
+        "duration_ms": 0,
+        "artifact_path": str(artifact_path),
+        "quotas": summary,
+    }
+    print(json.dumps(structured_log))
 
 
 if __name__ == "__main__":
