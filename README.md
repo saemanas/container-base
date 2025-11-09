@@ -50,7 +50,7 @@ Container Base replaces manual container logging with automated recognition, GPS
    ```bash
    ./scripts/run-all-checks.sh
    ```
-   The script executes Ruff, Pytest, and ESLint to mirror CI checks.
+   The script executes Ruff → Pytest → ESLint in the mandated order, records `{ts, opId, code, duration_ms}` metrics, and stages artifacts under `artifacts/ci/` so rollback drills have rehearsal evidence.
 6. **Populate environment templates**
    - Fill in the placeholder values inside `src/apps/*/.env.example`.
    - Real secrets belong in GitHub Actions, Cloud Run, Supabase, Vercel, and Expo secret stores (see `docs/deployment/secrets-catalog.md`).
@@ -59,6 +59,11 @@ Container Base replaces manual container logging with automated recognition, GPS
    ./scripts/run-local.sh
    ```
    The launcher coordinates API, OCR worker, portal, and mobile dev servers while tailing logs for each surface.@scripts/run-local.sh#1-115
+
+### Compliance evidence helpers
+- **PDPA retention rehearsal**: `bash scripts/run-retention-job.sh --environment staging --tag <rollback-tag> --op-id rehearsal-<date>` generates Supabase confirmation logs in `artifacts/pdpa/` for rollback drills.
+- **Notification snapshots**: `python scripts/send-ci-email.py --event success --service api --environment production --ref <tag> --duration PT5M --artifact-url <artifact> --workflow-run-url <run> --op-id notif-<tag>` writes `.eml` files to `artifacts/notifications/` so email proofs accompany release notes.
+- **Quota capture**: `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-production --append` stores the latest Supabase / Cloud Run / Vercel usage JSON and appends a markdown table to `docs/deployment/observability.md`.
 
 ## Continuous Integration
 

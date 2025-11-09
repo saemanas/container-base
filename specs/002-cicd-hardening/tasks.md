@@ -118,12 +118,12 @@
 
 **Purpose**: Improvements impacting multiple stories
 
-- [ ] T035 [P] Refresh `docs/deployment/ci-pipeline.md` diagrams and include notification email samples@specs/002-cicd-hardening/spec.md#12-85
-- [ ] T036 Document mobile out-of-scope handoff in `docs/deployment/ci-pipeline.md#mobile-ready` per FR-011@specs/002-cicd-hardening/spec.md#74-85
-- [ ] T037 Refine README quickstart section to reflect updated scripts and notification flow@README.md#49-117 @specs/002-cicd-hardening/quickstart.md#1-82
-- [ ] T038 [P] Add monitoring dashboard links for new metrics in `docs/deployment/observability.md`@specs/002-cicd-hardening/spec.md#87-103
-- [ ] T039 Conduct security review of GitHub environments and confirm `.env.example` parity@specs/002-cicd-hardening/spec.md#96-111
-- [ ] T040 [P] Run quickstart validation end-to-end and log results in `docs/deployment/release-checklist.md`@specs/002-cicd-hardening/quickstart.md#1-82
+- [x] T035 [P] Refresh `docs/deployment/ci-pipeline.md` diagrams and include notification email samples@specs/002-cicd-hardening/spec.md#12-85
+- [x] T036 Document mobile out-of-scope handoff in `docs/deployment/ci-pipeline.md#mobile-ready` per FR-011@specs/002-cicd-hardening/spec.md#74-85
+- [x] T037 Refine README quickstart section to reflect updated scripts and notification flow@README.md#49-117 @specs/002-cicd-hardening/quickstart.md#1-82
+- [x] T038 [P] Add monitoring dashboard links for new metrics in `docs/deployment/observability.md`@specs/002-cicd-hardening/spec.md#87-103
+- [x] T039 Conduct security review of GitHub environments and confirm `.env.example` parity@specs/002-cicd-hardening/spec.md#96-111
+- [x] T040 [P] Run quickstart validation end-to-end and log results in `docs/deployment/release-checklist.md`@specs/002-cicd-hardening/quickstart.md#1-82
 
 ---
 
