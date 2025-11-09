@@ -44,6 +44,8 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ## Common Operations
 - **Dry run locally**: `act pull_request -W .github/workflows/ci.yml`
 - **Component checks via helper script**: `bash scripts/run-act-ci.sh --follow -v` streams `act` logs for `python_checks`, `portal_checks`, and `openapi_checks`. Prepare `.env.act` with `GITHUB_TOKEN` and `PROJECT_TOKEN` (dummy values allowed) and ensure Docker is running. Apple silicon hosts automatically pass `--container-architecture linux/amd64`.
+- **Spin up local stack**: `bash scripts/run-local.sh` boots API, OCR worker, and portal (when configured) with Supabase credentials from the environment. Use this when validating end-to-end flows before tagging a release.
+- **Sanity-check CI prerequisites**: `bash scripts/validate-ci.sh` verifies required tooling/variables and emits structured JSON logs so missing dependencies are caught before pushing branches.
 - **Investigate failure**: Inspect the failing job log; re-run selected jobs from GitHub UI if inputs unchanged
 - **Upgrade dependencies**: Update `requirements.txt`, `package-lock.json`, re-run `npm install`, and adjust caches as needed
 - **Retrieve CI evidence**: Download `ci-summary-<run_id>` artifact to attach audit-ready logs during release reviews (retained for 90 days)
@@ -51,6 +53,22 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 - **Portal stack guard**: CI runs `python3 scripts/check-portal-stack.py` to enforce Next.js 16 / React 19 baseline before building
 - **Notification archive**: Production deploys and rollbacks call `scripts/send-ci-email.py` which emits `.eml` artifacts in `artifacts/notifications/` and structured logs `{ts, opId, code, duration_ms}` for auditing.
 - **Quota evidence**: Execute `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-<env>` post-release to record Supabase/Cloud Run/Vercel usage snapshots alongside CI artifacts.
+
+### Script Reference
+| Script | Purpose | Primary doc |
+| --- | --- | --- |
+| `scripts/run-act-ci.sh` | Replay CI component checks locally with `act` (supports `--follow`, `-v`, `-vv`). | This document (Common Operations) |
+| `scripts/run-all-checks.sh` | Run Ruff, Pytest, and portal ESLint before committing. | `docs/deployment/ci-baselines.md` |
+| `scripts/run-local.sh` | Launch API, OCR worker, portal, and optional mobile dev servers for manual QA. | This document (Common Operations) |
+| `scripts/validate-ci.sh` | Assert required tooling, config files, and env vars exist before CI. | This document (Common Operations) |
+| `scripts/check-portal-stack.py` | Ensure portal dependencies stay on mandated Next.js/React majors. | This document (Stages & Common Operations) |
+| `scripts/measure-ci.sh` | Capture local CI stage timing snapshots and append evidence tables. | `docs/deployment/ci-baselines.md` |
+| `scripts/check-free-tier.py` | Track free-tier quota consumption and append observability notes. | `docs/deployment/observability.md` |
+| `scripts/measure-latency.py` | Probe HTTP latency for readyz endpoints and log KPI evidence. | `docs/deployment/cost-guardrails.md` |
+| `scripts/run-retention-job.sh` | Execute PDPA retention drill against Supabase with structured logs. | `docs/deployment/observability.md` & `docs/deployment/release-checklist.md` |
+| `scripts/promote-supabase.sh` | Push Supabase migrations staging→production with RLS smoke tests. | `docs/deployment/rollback-playbook.md` |
+| `scripts/supabase-smoke-test.sh` | Validate Supabase schema and retention policies post-deploy. | `docs/deployment/supabase-schema.md` |
+| `scripts/send-ci-email.py` | Emit structured email notifications for CI/CD events. | `docs/deployment/ci-cd-notifications.md` |
 
 ## Troubleshooting
 - **Ruff/ESLint failures**: Fix lint issues locally; re-run `ruff check` or `npm run lint`
