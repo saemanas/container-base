@@ -1,0 +1,18 @@
+line-length = 100
+target-version = "py312"
+src = ["src/apps/api", "src/apps/ocr-worker"]
+
+[lint]
+select = [
+  "E",
+  "F",
+  "W",
+  "I",
+  "B",
+  "UP"
+]
+ignore = ["E203", "E501"]
+
+[lint.isort]
+combine-as-imports = true
+known-first-party = ["api", "ocr"]

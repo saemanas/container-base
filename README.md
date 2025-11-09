@@ -1,78 +1,137 @@
-# Container Base Infrastructure Skeleton
+# Container Base Monorepo
 
-Container Base is a low-cost CI/CD and infrastructure scaffold supporting API, OCR worker, web portal, and mobile clients for autonomous container tracking in Thailand.@refs/docs/CB-Instruction-v1.0.0-en-US.md#21-63
+Container Base replaces manual container logging with automated recognition, GPS tracking, and auditable billing. This repository hosts the polyglot stack (FastAPI API, OCR worker, Next.js portal, Expo mobile) plus shared CI/CD and infrastructure assets.
 
-## Repository Layout
+## Project Structure
 
 ```
-src/
-  apps/
-    api/
-      Dockerfile
-      service/
-    ocr-worker/
-      Dockerfile
-    portal/
-      package.json
-    mobile/
-      app.config.ts
-.github/workflows/
-  ci.yml
-  deploy-api.yml
-  deploy-ocr.yml
-  deploy-portal.yml
-docs/deployment/
-  ci-pipeline.md
-  pdpa-playbook.md
-  secrets-catalog.md
-  supabase-schema.md
-specs/001-lowcost-cicd-infra/
-  spec.md
-  plan.md
-  tasks.md
-scripts/
-  run-local.sh
+.
+├── src/apps/api/               # FastAPI service
+├── src/apps/ocr-worker/        # OCR background worker
+├── src/apps/portal/            # Next.js portal (Tailwind CSS + shadcn/ui)
+│   └── components/             # Shared UI building blocks (e.g., shadcn buttons)
+├── src/apps/mobile/            # Expo mobile app
+├── docs/deployment/            # Runbooks, guardrails, secrets, KPI mapping
+├── scripts/                    # CI helpers, measurement utilities
+├── specs/                      # Spec-kit artifacts (spec, plan, tasks, etc.)
+└── tests/                      # Pytest suites for contracts, PDPA, guardrails
 ```
 
 > Folder strategy keeps each surface in its own build context while centralizing governance assets and workflows.@specs/001-lowcost-cicd-infra/plan.md#47-79
 
 ## Getting Started
 
-1. **Prerequisites**
-   - Docker, Docker Compose, Node.js 22, Python 3.12, and Supabase access tokens as described in the secrets catalog.@docs/deployment/secrets-catalog.md#1-57
-2. **Bootstrap services locally**
+1. **Clone the repo and sync staging branch**
+   ```bash
+   git clone https://github.com/saemanas/container-base.git
+   cd container-base
+   git checkout develop
+   git pull origin develop
+   ```
+2. **Create a feature branch (spec-kit naming)**
+   ```bash
+   git checkout -b NNN-some-spec
+   ```
+   Replace `NNN-some-spec` with the spec identifier (e.g., `002-billing-api`).
+3. **Create a Python virtual environment (recommended)**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   python -m pip install --upgrade pip
+   ```
+4. **Install dependencies**
+   ```bash
+   python -m pip install -r src/apps/api/requirements.txt
+   python -m pip install -r src/apps/ocr-worker/requirements.txt
+   npm install --prefix src/apps/portal
+   npx expo install --cwd src/apps/mobile
+   ```
+5. **Run local validation before committing**
+   ```bash
+   ./scripts/run-all-checks.sh
+   ```
+   The script executes Ruff, Pytest, and ESLint to mirror CI checks.
+6. **Populate environment templates**
+   - Fill in the placeholder values inside `src/apps/*/.env.example`.
+   - Real secrets belong in GitHub Actions, Cloud Run, Supabase, Vercel, and Expo secret stores (see `docs/deployment/secrets-catalog.md`).
+7. **Bootstrap services locally**
    ```bash
    ./scripts/run-local.sh
    ```
    The launcher coordinates API, OCR worker, portal, and mobile dev servers while tailing logs for each surface.@scripts/run-local.sh#1-115
-3. **Configuration**
-   - Copy each `.env.example` to `.env` and populate credentials in your secret manager (never commit real values).@specs/001-lowcost-cicd-infra/spec.md#65-74
 
 ## Continuous Integration
 
-GitHub Actions enforces a shared pipeline running Ruff, ESLint, Pytest, Spectral, container builds, and GHCR pushes before deployment steps.@specs/001-lowcost-cicd-infra/spec.md#65-74 @.github/workflows/ci.yml#1-183
+- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → OpenAPI Lint (Redocly CLI) → Build → GHCR push.
+- `scripts/validate-ci.sh` verifies mandatory files and secrets locally before running `act`.
+- `scripts/measure-ci.sh` captures stage runtimes and appends them to `docs/deployment/ci-pipeline.md` for trend analysis.
+- Tests live under `tests/` and include CI guardrails, contract linting, and deployment smoke suites.@tests/backend/test_ci_guardrails.py#25-44 @tests/contract/test_health_contract.py#1-40 @tests/integration/test_cloud_run.py#1-34
 
-- Run `./scripts/validate-ci.sh` locally to emulate the contract checks with structured JSON logging.@scripts/validate-ci.sh#1-35
-- Tests live under `tests/` and include CI guardrails, contract linting, and deployment smoke suites.@tests/backend/test_ci_guardrails.py#1-19 @tests/contract/test_health_contract.py#1-31 @tests/integration/test_cloud_run.py#1-38
+## Deployment
 
-## Deployment Workflows
+### Branch Workflow
+- `main`: Production branch (protected). Only release-ready changes merge here.
+- `develop`: Staging branch (protected). Integrates validated spec branches before release.
+- `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `002-billing-api`). Branch from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
 
-Phase 4 introduces GitHub Actions deploy pipelines for each surface:
-
-- **API**: `deploy-api.yml` promotes images to Cloud Run. Staging auto-deploys on `develop`; production requires a manual dispatch with approval gates.@.github/workflows/deploy-api.yml#1-74
-- **OCR Worker**: `deploy-ocr.yml` mirrors the Cloud Run strategy (to be implemented next).
-- **Portal**: `deploy-portal.yml` targets Vercel hobby environments (to be implemented next).
-
-Health and readiness endpoints (`/healthz`, `/readyz`) are defined in the API to satisfy Cloud Run probes and smoke tests.@src/apps/api/service/main.py#15-24 @tests/integration/test_cloud_run.py#1-38
+### Deploy Checklist
+1. **Activate environment**
+   ```bash
+   source .venv/bin/activate
+   python -m pip install -r src/apps/api/requirements.txt -r src/apps/ocr-worker/requirements.txt
+   ```
+2. **Run critical tests**
+   ```bash
+   pytest tests/backend/test_pdpa_compliance.py tests/worker/test_ocr_pdpa.py
+   ```
+3. **Kick off staging deploy** (auto on `develop`, or manual trigger):
+   ```bash
+   gh workflow run deploy-api.yml --ref develop --field environment=staging
+   gh workflow run deploy-ocr.yml --ref develop --field environment=staging
+   gh workflow run deploy-portal.yml --ref develop --field environment=staging
+   ```
+4. **Smoke test staging**
+   ```bash
+   curl https://api-stg.container-base.com/healthz
+   curl https://ocr-stg.container-base.com/healthz
+   ```
+   Confirm portal loads via Vercel preview and Supabase connectivity is intact.
+5. **Promote to production** (manual approval + tag)
+   ```bash
+   gh workflow run deploy-api.yml --ref main --field environment=production --field rollback_tag=v1.2.3
+   gh workflow run deploy-ocr.yml --ref main --field environment=production --field rollback_tag=v1.2.3
+   gh workflow run deploy-portal.yml --ref main --field environment=production
+   ```
+6. **Post-deploy validation**
+   ```bash
+   curl https://api.container-base.com/readyz
+   curl https://ocr.container-base.com/readyz
+   ```
+   Check Vercel production domain, Supabase dashboards, and Cloud Run metrics for error spikes.
+7. **Rollback reference**
+   If issues arise, consult `docs/deployment/rollback-playbook.md` for tag-based rollback commands and communication checklist.
+8. **Observability update**
+   - Run `python scripts/check-free-tier.py --append` after release to record quota usage.
+   - Optionally execute `python scripts/measure-latency.py --iterations 10` and log results per `docs/deployment/cost-guardrails.md`.
 
 ## Operational Playbooks
 
-Operational guides live under `docs/deployment/` and cover PDPA consent, Supabase schema isolation, CI pipeline expectations, and secrets governance.@docs/deployment/pdpa-playbook.md#1-27 @docs/deployment/supabase-schema.md#1-49 @docs/deployment/ci-pipeline.md#1-25
+- `docs/deployment/observability.md` lists dashboards (Cloud Run, Supabase, Vercel) and automation scripts.
+- `docs/deployment/pdpa-playbook.md` captures consent workflows and retention obligations.
+- `docs/deployment/secrets-catalog.md` tracks secrets locations, scopes, and rotation cadence.
+- `docs/deployment/supabase-schema.md` documents environment-specific schema and RLS.
 
-## Roadmap
+## Governance & Typing Policy
 
-Implementation proceeds per `specs/001-lowcost-cicd-infra/tasks.md`, progressing from foundational setup through deployment automation and cost guardrails.@specs/001-lowcost-cicd-infra/tasks.md#1-104
+- Spec-kit flow is mandatory: Spec → Plan → Tasks → Implementation → Tests → Verification (see `AGENTS.md`).
+- Python services must use explicit static typing—annotated functions, Pydantic (or equivalent) validation, and Ruff/pyright cleanliness.
+- CI/CD governance expects OpenAPI contracts in `contracts/` to remain canonical; downstream code consumes generated assets only.
+
+## Roadmap & Further Reading
+
+- `specs/001-lowcost-cicd-infra/` contains the reference spec, plan, research, and task backlog for the initial infrastructure feature set.
+- `refs/docs/` hosts the CB charter, service plan, stack baselines, and UX standards that every new feature must cite.
 
 ---
 
-For detailed requirements, architecture decisions, and open tasks, consult `spec.md`, `plan.md`, and `tasks.md` within the feature directory.@specs/001-lowcost-cicd-infra/spec.md#61-118 @specs/001-lowcost-cicd-infra/plan.md#47-79
+Internal project – follow organization guidelines for distribution limits and PDPA compliance.
