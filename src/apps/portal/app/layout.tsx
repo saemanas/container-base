@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Operator and admin console for Container Base.",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }): JSX.Element {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       {/* Tailwind utility scaffold applies default typography/background for every page. */}
