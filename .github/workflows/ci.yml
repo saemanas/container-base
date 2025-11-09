@@ -121,11 +121,12 @@ jobs:
           path: ${{ env.PORTAL_DIR }}/.next/cache
           key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
+      - name: Install workspace dependencies
+        run: npm ci --workspaces --include=dev
+
       - name: Install portal dependencies
-        run: |
-          npm install --workspaces --include=dev
-          npm install --prefix ${{ env.PORTAL_DIR }} --include=dev
-          test -f ${{ env.PORTAL_DIR }}/node_modules/tailwindcss/lib/css/preflight.css
+        working-directory: ${{ env.PORTAL_DIR }}
+        run: npm ci --include=dev
 
       - name: Run ESLint
         run: |
