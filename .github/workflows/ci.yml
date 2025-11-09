@@ -200,7 +200,7 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            npx --yes @redocly/cli@2.11.0 openapi diff \
+            npx --yes @redocly/openapi-cli@1.0.0-beta.116 diff \
               artifacts/ci/openapi_lint/base-openapi.yaml \
               "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
