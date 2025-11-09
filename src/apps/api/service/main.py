@@ -13,10 +13,12 @@ logger = get_logger()
 async def lifespan(app: FastAPI):
     """Application lifespan handler to log startup/shutdown events."""
 
+    # Emit a structured startup log before yielding control to FastAPI.
     log_event(logger, op_id="startup", code="START", duration_ms=0, message="API service boot")
     try:
         yield
     finally:
+        # Mirror the startup log so platform monitors capture a balanced shutdown event.
         log_event(logger, op_id="shutdown", code="STOP", duration_ms=0, message="API service shutdown")
 
 
@@ -30,6 +32,7 @@ async def enforce_pdpa(request: Request, call_next):
     if request.url.path in {"/healthz", "/readyz"}:
         return await call_next(request)
 
+    # Reconstruct a consent record from headers—downstream services expect a typed model.
     consent_status = request.headers.get("x-pdpa-consent-status")
     consent_record: pdpa.ConsentRecord | None = None
     if consent_status:
@@ -42,6 +45,7 @@ async def enforce_pdpa(request: Request, call_next):
     try:
         request.state.consent_record = pdpa.require_consent(consent_record)
     except pdpa.ConsentMissingError as exc:
+        # Deny requests without valid consent before they reach any handler logic.
         raise HTTPException(status_code=403, detail=str(exc)) from exc
 
     email = request.headers.get("x-user-email")
@@ -52,6 +56,7 @@ async def enforce_pdpa(request: Request, call_next):
     lon = request.headers.get("x-gps-lon")
     if lat and lon:
         try:
+            # GPS rounding enforces PDPA-compliant precision prior to logging or response usage.
             request.state.rounded_gps = pdpa.round_gps(float(lat), float(lon))
         except ValueError:
             pass

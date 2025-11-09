@@ -1,10 +1,10 @@
 """Structured logging utilities for the OCR worker service."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 import logging
 import sys
+from datetime import datetime
 from typing import Any, TypedDict
 
 
@@ -44,7 +44,7 @@ def log_event(
 ) -> None:
     """Emit a structured log following `{ ts, opId, code, duration_ms }` schema."""
     payload: LogPayload = {
-        "ts": ts or datetime.now(tz=timezone.utc).isoformat(),
+        "ts": ts or datetime.now(tz=datetime.UTC).isoformat(),
         "opId": op_id,
         "code": code,
         "duration_ms": duration_ms,

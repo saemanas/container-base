@@ -81,7 +81,7 @@ Follow this flow to run all services together while pointing to the shared Supab
    source .venv/bin/activate  # if not already active
    act pull_request -W .github/workflows/ci.yml
    ```
-   Expect Ruff/ESLint/Pytest/Spectral stages to pass or fail with actionable errors.
+   Expect Ruff/ESLint/Pytest/OpenAPI Lint stages to pass or fail with actionable errors.
 2. **Execute health checks**
    ```bash
    curl https://cb-api-stg-<hash>.run.app/healthz

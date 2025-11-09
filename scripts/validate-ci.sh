@@ -2,6 +2,7 @@
 # Baseline CI validation script for Container Base
 set -euo pipefail
 
+# Emit a structured error log if any command fails; ERR trap preserves failing command context.
 trap 'log_json "validate-ci" "ERROR" "Validation aborted" "\"${BASH_COMMAND}\""' ERR
 
 log_json() {
@@ -19,8 +20,11 @@ log_json() {
 }
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Core configuration files that must exist before attempting to run the CI workflow locally.
 EXPECT_FILES=(".ruff.toml" ".eslintrc.cjs" ".prettierrc" ".github/workflows")
-STAGES=("Ruff" "ESLint" "Pytest" "Spectral" "Build" "GHCR" "Tag Deploy")
+# Guardrail sequence enforced by the constitution; log the expected order for quick comparison.
+STAGES=("Ruff" "ESLint" "Pytest" "OpenAPI Lint" "Build" "GHCR" "Tag Deploy")
+# Base tooling required to execute the pipeline steps locally.
 REQUIRED_COMMANDS=("python3" "npm" "docker")
 REQUIRED_ENV=(
   "API_SUPABASE_URL"

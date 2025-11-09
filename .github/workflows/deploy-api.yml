@@ -1,0 +1,73 @@
+name: Deploy API
+
+on:
+  push:
+    branches: ["develop"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        env:
+          GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "Authenticating to GCP (staging)..."
+          # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
+
+      - name: Deploy to Cloud Run (staging)
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: ${{ secrets.CLOUD_RUN_REGION }}
+        run: |
+          SERVICE_NAME=cb-api
+          echo "Deploying $SERVICE_NAME to staging Cloud Run in $REGION"
+          echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/api:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+
+  deploy-production:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    needs: []
+    environment:
+      name: production
+      url: https://cb-api-prod.example.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        env:
+          GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
+        run: |
+          echo "Authenticating to GCP (production)..."
+          # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
+
+      - name: Deploy to Cloud Run (production)
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          REGION: ${{ secrets.CLOUD_RUN_REGION }}
+        run: |
+          SERVICE_NAME=cb-api
+          echo "Deploying $SERVICE_NAME to production Cloud Run in $REGION"
+          echo "gcloud run deploy $SERVICE_NAME-prod --image ghcr.io/${{ github.repository }}/api:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+
+      - name: Post-deploy verification reminder
+        run: |
+          echo "Verify /healthz and /readyz endpoints after production rollout."

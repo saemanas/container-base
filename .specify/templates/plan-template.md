@@ -31,7 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Spec-to-Verification Discipline**: Link to the approved `/specs/<feature>/spec.md` and confirm the Spec → Plan → Tasks → Implementation → Tests → Verification sequence is scheduled, with Context7 MCP availability (or outage log + risks) recorded.
+- **Test-First Observability**: Outline planned tests (success + failure), coverage targets (≥70% overall, 100% for auth/upload/recognition), JSON logging, and how Docker Compose services plus `/reports/vision-bench.json` will surface KPIs (API P95 ≤3s, upload success ≥99%, rollback ≤10m).
+- **PDPA-Safe Data Stewardship**: Describe consent gating, GPS rounding, email masking, Supabase RLS scopes, retention/ deletion workflows (≤48h), and secrets handling (GitHub environments + `.env.example` placeholders).
+- **Instant, Resilient, Clear UX**: Declare Capture → Review → Submit ≤3 taps, offline queue design, required UI states (Empty/Loading/Success/Error/Offline), localization approach (EN/TH keys only), and role visibility (Org → Site → Admin → Operator → Viewer).
+- **Automated CI/CD & Versioned Releases**: Confirm branch/commit strategy, CI order (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR Push → Tag Deploy), rollback plan (≤10m), and ownership of OpenAPI contracts, `/billing/*` schemas, and `/models/<version>/model.yaml`.
+- **Stack & Infrastructure Alignment**: State targeted runtimes (Python 3.12, Node 22.21.1, Expo/Next.js/FastAPI/Supabase), deployment targets (Cloud Run/Render/Fly + Cloudflare), monitoring (Grafana/Sentry), and payment/logistics integrations impacted.
 
 ## Project Structure
 

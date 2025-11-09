@@ -31,6 +31,7 @@ async def lifespan(app: FastAPI):
     """Lifecycle management for OCR worker."""
 
     try:
+        # Validate environment variables up front; the worker must not start with forbidden credentials.
         sanitized_env = pdpa.validate_credentials(os.environ)
     except pdpa.ServiceRoleForbiddenError as exc:
         log_event(logger, op_id="startup", code="PDPA_DENY", duration_ms=0, message=str(exc))
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
 
     app.state.supabase_credentials = sanitized_env
     stop_event = asyncio.Event()
+    # Spawn the background loop that performs periodic OCR tasks.
     worker_task: asyncio.Task[Any] = asyncio.create_task(_run_worker(stop_event))
     log_event(logger, op_id="startup", code="START", duration_ms=0, message="OCR worker service boot")
 
@@ -45,6 +47,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop_event.set()
+        # Ensure the background task fully drains before reporting a clean shutdown.
         await worker_task
         log_event(logger, op_id="shutdown", code="STOP", duration_ms=0, message="OCR worker service shutdown")
 

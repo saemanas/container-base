@@ -34,6 +34,7 @@ Non-negotiable rules:
 - Write failing tests before implementation with success and failure cases; maintain ≥70% coverage overall and 100% for auth, upload, and recognition modules.
 - Enforce Ruff for Python, ESLint for JS/TS, and repository Prettier hooks; reject dead/commented code and require typed signatures plus docstrings on public functions.
 - Python services must employ explicit static typing with Pydantic (or equivalent) models and annotated signatures; no implicit `Any` may remain after linting.
+- Every code change MUST include concise English comments capturing intent, invariants, and edge cases; reviewers reject submissions lacking explanatory comments.
 - All services emit structured logs `{ ts, opId, code, duration_ms }` and expose metrics that prove API P95 ≤ 3 s, offline upload success ≥ 99%, vision accuracy ≥ 90%, and rollback ≤ 10 min (validated via k6, Sentry, Grafana, or equivalent traces).
 - Deliverables ship with Docker Compose targets, health probes, `/reports/vision-bench.json`, and monitoring dashboards so regressions are observable.
 Rationale: Only measurable systems can uphold the KPI and SLA budgets promised to Thai logistics customers.
@@ -57,7 +58,7 @@ Rationale: Frontline operators adopt CB only when the experience is instant, res
 ### Automated CI/CD & Versioned Releases
 Non-negotiable rules:
 - Branch policy: `main` (production), `develop` (staging), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks.
-- CI pipeline order is immutable: Ruff → ESLint → Pytest → Spectral → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
+- CI pipeline order is immutable: Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
 - Release Drafter creates notes on every `main` merge; semantic tags (vX.Y.Z) trigger production deploys via Cloud Run/Render/Fly, and rollback by redeploying the previous tag must finish ≤10 minutes.
 - OpenAPI schemas, `/billing/*` contracts, model manifests (`/models/<version>/model.yaml`), and shared DTOs in `contracts/` are the single source of truth; downstream code consumes generated clients only.
 Rationale: Automation keeps the free-tier stack reliable, transparent, and ready for rollback without human toil.
