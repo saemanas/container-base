@@ -181,7 +181,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/openapi_lint
-          npx --yes @redocly/cli@2.11.0 openapi lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
+          npx --yes @redocly/cli@2.11.0 lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
 
       - name: Diff OpenAPI contract against base
         run: |
