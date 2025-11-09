@@ -68,7 +68,7 @@ jobs:
         run: |
           if [ -f "src/apps/${{ matrix.app }}/package.json" ]; then
             cd src/apps/${{ matrix.app }}
-            npx eslint . --max-warnings=0 || exit 1
+            npm run lint -- --max-warnings=0
           else
             echo "No package.json in src/apps/${{ matrix.app }}; skipping lint"
           fi

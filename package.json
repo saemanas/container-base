@@ -1,0 +1,18 @@
+{
+  "name": "container-base",
+  "private": true,
+  "workspaces": [
+    "src/apps/api",
+    "src/apps/mobile",
+    "src/apps/ocr-worker",
+    "src/apps/portal"
+  ],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "6.21.0",
+    "@typescript-eslint/parser": "6.21.0",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.3",
+    "eslint-plugin-react": "7.34.2",
+    "typescript": "5.4.5"
+  }
+}
