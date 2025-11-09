@@ -12,6 +12,7 @@ env:
   NODE_VERSION: "22.21.1"
   GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository }}
   ARTIFACT_RETENTION_DAYS: "90"
+  ACT_SKIP_ARTIFACTS: ""
 
 jobs:
   python_checks:
@@ -61,7 +62,7 @@ jobs:
           done
 
       - name: Upload Ruff artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-ruff-${{ github.run_id }}
@@ -75,7 +76,7 @@ jobs:
           pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pdpa/api.log
 
       - name: Upload PDPA artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-pdpa-${{ github.run_id }}
@@ -92,7 +93,7 @@ jobs:
           done
 
       - name: Upload Pytest artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-pytest-${{ github.run_id }}
@@ -149,7 +150,7 @@ jobs:
           npm run test --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/portal_tests/portal.log
 
       - name: Upload portal test artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-portal-tests-${{ github.run_id }}
@@ -196,7 +197,7 @@ jobs:
           fi
 
       - name: Upload OpenAPI artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-openapi-${{ github.run_id }}
@@ -231,7 +232,7 @@ jobs:
             --tag "${{ env.GHCR_IMAGE_PREFIX }}/${{ matrix.service.name }}:ci-${{ github.run_id }}" 2>&1 | tee artifacts/ci/build/${{ matrix.service.name }}.log
 
       - name: Upload build artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-build-${{ matrix.service.name }}-${{ github.run_id }}
@@ -282,7 +283,7 @@ jobs:
           EOF
 
       - name: Upload GHCR artifacts
-        if: always()
+        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-ghcr-${{ matrix.service.name }}-${{ github.run_id }}
@@ -304,6 +305,7 @@ jobs:
           } > artifacts/ci/tag_deploy/pipeline-summary.txt
 
       - name: Upload CI pipeline evidence
+        if: ${{ env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-tag-deploy-${{ github.run_id }}

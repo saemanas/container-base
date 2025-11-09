@@ -43,7 +43,6 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 
 ## Common Operations
 - **Dry run locally**: `act pull_request -W .github/workflows/ci.yml`
-- **Component checks via helper script**: `bash scripts/run-act-ci.sh --follow -v` streams `act` logs for `python_checks`, `portal_checks`, and `openapi_checks`. Prepare `.env.act` with `GITHUB_TOKEN` and `PROJECT_TOKEN` (dummy values allowed) and ensure Docker is running. Apple silicon hosts automatically pass `--container-architecture linux/amd64`.
 - **Spin up local stack**: `bash scripts/run-local.sh` boots API, OCR worker, and portal (when configured) with Supabase credentials from the environment. Use this when validating end-to-end flows before tagging a release.
 - **Sanity-check CI prerequisites**: `bash scripts/validate-ci.sh` verifies required tooling/variables and emits structured JSON logs so missing dependencies are caught before pushing branches.
 - **Investigate failure**: Inspect the failing job log; re-run selected jobs from GitHub UI if inputs unchanged
@@ -57,7 +56,6 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ### Script Reference
 | Script | Purpose | Primary doc |
 | --- | --- | --- |
-| `scripts/run-act-ci.sh` | Replay CI component checks locally with `act` (supports `--follow`, `-v`, `-vv`). | This document (Common Operations) |
 | `scripts/run-all-checks.sh` | Run Ruff, Pytest, and portal ESLint before committing. | `docs/deployment/ci-baselines.md` |
 | `scripts/run-local.sh` | Launch API, OCR worker, portal, and optional mobile dev servers for manual QA. | This document (Common Operations) |
 | `scripts/validate-ci.sh` | Assert required tooling, config files, and env vars exist before CI. | This document (Common Operations) |
