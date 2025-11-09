@@ -48,6 +48,19 @@ jobs:
           echo "Deploying $SERVICE_NAME to staging Cloud Run in $REGION"
           echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/ocr:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
 
+      - name: Capture deployed image digest (staging)
+        run: |
+          mkdir -p artifacts/digests
+          docker pull ghcr.io/${{ github.repository }}/ocr:latest
+          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/ocr:latest > artifacts/digests/ocr.txt
+
+      - name: Upload staging digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ocr-staging-digest
+          path: artifacts/digests/ocr.txt
+          retention-days: 7
+
   deploy-production:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     runs-on: ubuntu-latest

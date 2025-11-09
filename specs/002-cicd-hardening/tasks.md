@@ -76,16 +76,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T021 [P] [US2] Add integration test for Supabase staging promotion script in `tests/integration/test_supabase_promotion.py`@specs/002-cicd-hardening/spec.md#72-85
-- [ ] T022 [P] [US2] Add deploy workflow smoke test for Cloud Run/Vercel/Cloudflare in `tests/integration/test_multicloud_deploy.py`@specs/002-cicd-hardening/spec.md#33-45
+- [x] T021 [P] [US2] Add integration test for Supabase staging promotion script in `tests/integration/test_supabase_promotion.py`@specs/002-cicd-hardening/spec.md#72-85
+- [x] T022 [P] [US2] Add deploy workflow smoke test for Cloud Run/Vercel/Cloudflare in `tests/integration/test_multicloud_deploy.py`@specs/002-cicd-hardening/spec.md#33-45
 
 ### Implementation for User Story 2
 
-- [ ] T023 [P] [US2] Update `deploy-api.yml` and `deploy-ocr.yml` to use immutable GHCR digests and enforce staging-before-production Supabase promotion@specs/002-cicd-hardening/spec.md#33-86
-- [ ] T024 [P] [US2] Extend `deploy-portal.yml` to wait for backend success and run portal status checks for EN/TH UI states@specs/002-cicd-hardening/spec.md#35-117
-- [ ] T025 [US2] Implement Supabase CLI automation script `scripts/promote-supabase.sh` with RLS smoke test hook@specs/002-cicd-hardening/spec.md#72-85
-- [ ] T026 [US2] Document multicloud deployment sequence and rollback metadata requirements in `docs/deployment/rollback-playbook.md`@specs/002-cicd-hardening/spec.md#33-60 @README.md#107-112
-- [ ] T027 [P] [US2] Configure Cloudflare deployment verification step (DNS cache purge and propagation check) in `deploy-api.yml`@specs/002-cicd-hardening/spec.md#33-60
+- [x] T023 [P] [US2] Update `deploy-api.yml` and `deploy-ocr.yml` to use immutable GHCR digests and enforce staging-before-production Supabase promotion@specs/002-cicd-hardening/spec.md#33-86
+- [x] T024 [P] [US2] Extend `deploy-portal.yml` to wait for backend success and run portal status checks for EN/TH UI states@specs/002-cicd-hardening/spec.md#35-117
+- [x] T025 [US2] Implement Supabase CLI automation script `scripts/promote-supabase.sh` with RLS smoke test hook@specs/002-cicd-hardening/spec.md#72-85
+- [x] T026 [US2] Document multicloud deployment sequence and rollback metadata requirements in `docs/deployment/rollback-playbook.md`@specs/002-cicd-hardening/spec.md#33-60 @README.md#107-112
+- [x] T027 [P] [US2] Configure Cloudflare deployment verification step (DNS cache purge and propagation check) in `deploy-api.yml`@specs/002-cicd-hardening/spec.md#33-60
 
 **Checkpoint**: User Stories 1 and 2 operational independently
 
