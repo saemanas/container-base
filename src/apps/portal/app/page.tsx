@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { Button } from "../components/ui/button";
 
-export default function Page(): JSX.Element {
+export default function Page() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-10">
       <section className="flex flex-col items-center gap-3 text-center">
