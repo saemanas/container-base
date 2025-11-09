@@ -36,6 +36,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache pip wheels
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
       - name: Authenticate to Google Cloud
         env:
           GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
@@ -90,6 +98,14 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
+
+      - name: Cache pip wheels
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
 
       - name: Download staging digest
         uses: actions/download-artifact@v4

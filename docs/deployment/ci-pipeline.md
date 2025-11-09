@@ -8,6 +8,13 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 - **Feature branch pushes** (any branch except `main`/`develop`) run CI automatically, providing feedback prior to opening a PR.
 - **Direct pushes to `main`/`develop`** rely on the resulting PR merge checks; the workflow ignores raw push events on these protected branches to prevent duplicate runs.
 
+### Caching policy
+- **pip (API/OCR + tests)**: cache `~/.cache/pip` using key `pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}`. Restores across feature branches to reuse wheel downloads.
+- **npm (Portal)**: rely on `actions/setup-node@v4` with `cache: npm` and `cache-dependency-path: package-lock.json` so the shared npm store is restored automatically. This works alongside the existing `.next/cache` artifact for faster Next.js builds.
+- **Docker Buildx**: use GitHub Actions cache backend (`type=gha`) so CI and CD jobs share image layers. Key format `docker-${{ runner.os }}-${{ env.GHCR_IMAGE_PREFIX }}` with branch-specific restore keys.
+- **Portal deploy assets**: reuse npm cache for CD workflows to avoid reinstalling dependencies before `vercel` bundle steps.
+- **Capacity guardrail**: monitor Actions storage (default 10 GB for free tier). Old caches are removed via LRU, but periodically clear stale entries with `gh cache delete` if needed.
+
 ## Stages
 1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Both jobs must succeed before downstream stages proceed.
 2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution.
