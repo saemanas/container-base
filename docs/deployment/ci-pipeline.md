@@ -18,7 +18,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ## Stages
 1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Both jobs must succeed before downstream stages proceed.
 2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution.
-3. **OpenAPI Lint & Diff (Redocly CLI)** – Lint the contract and compare against the base branch using `redocly diff` to detect breaking changes before merge.
+3. **OpenAPI Lint & Diff** – Lint the contract with `@redocly/cli@2.11.0` and compare against the base branch using `openapi-diff@0.24.1`. Because the diff tool only understands OpenAPI 3.0.x, CI copies both the base and head specs into `artifacts/ci/openapi_lint/` and temporarily rewrites the document header from `openapi: 3.1.0` to `openapi: 3.0.3` prior to comparison. The original sources remain untouched; the normalization only happens inside the CI artifact directory before the diff runs.
 4. **Build** – Docker image builds for API/OCR via Buildx
 5. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
 6. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/tag_deploy/pipeline-summary.txt` with a 90-day retention window for compliance evidence
@@ -71,7 +71,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ## Troubleshooting
 - **Ruff/ESLint failures**: Fix lint issues locally; re-run `ruff check` or `npm run lint`
 - **Pytest failures**: Ensure tests import correct modules; mimic pipeline environment with Python 3.12
-- **OpenAPI lint failures**: Validate OpenAPI contract structure; run `redocly lint` manually
+- **OpenAPI lint/diff failures**: Validate OpenAPI contract structure (`npx @redocly/cli@2.11.0 lint <spec>`). For diff issues, replicate the CI behavior locally by copying the specs, rewriting the header to `openapi: 3.0.3`, and running `npx openapi-diff@0.24.1 <base> <head>` to inspect changes.
 - **Docker build failures**: Confirm Dockerfile path and dependencies; leverage `docker build` locally
 - **GHCR push issues**: Ensure `PROJECT_TOKEN` PAT exists with `write:packages` scope; rotate via GitHub settings if expired
 
