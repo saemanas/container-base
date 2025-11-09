@@ -11,6 +11,10 @@ This document enumerates the dashboards, scripts, and alerting flows used to obs
 | Supabase | Usage dashboard | Supabase Console → Project → Reports | Verify row read/write counts, storage utilization, function execution |
 | Vercel Portal | Vercel Analytics | Vercel Dashboard → Project → Analytics | Observe build minutes, response latency, error rate |
 | KPI Aggregation | Grafana (future) | TBD | Aggregate KPI mapping (FPRR, P95, retention) once data warehouse is online |
+| Rollback Drill | GitHub Actions Run Summary | `https://github.com/<org>/<repo>/actions/workflows/deploy-api.yml` (select production run) | Validate ≤10 minute MTTR and confirm structured logs `{ts, opId, code, duration_ms}` |
+| PDPA Retention Audit | Supabase Logs → Functions | Supabase Console → Logs → Audit | Cross-check `scripts/run-retention-job.sh` confirmations within 48 h |
+| Notification Archive | Compliance Email Vault | Shared Drive → `Operations/CI-CD/Notifications` | Ensure `.eml` artifacts from `scripts/send-ci-email.py` match delivered emails |
+| Quota Snapshot | GitHub Artifacts (`artifacts/quotas/`) | GitHub Actions run → Artifacts tab | Track Supabase/Cloud Run/Vercel usage after each release via `check-free-tier.py` |
 
 ## Alert Sources
 - **Cloud Run**: Create alert policies on latency (P95) ≥ 2.4 s, error rate ≥ 1%, CPU usage ≥ 80% for 5 min.
@@ -30,3 +34,19 @@ This document enumerates the dashboards, scripts, and alerting flows used to obs
 2. Run `scripts/measure-ci.sh` weekly to track pipeline regression.
 3. Run `scripts/measure-latency.py` whenever Cloud Run alerts trigger or before major releases.
 4. Log the results into this document and cross-link to incident reports in `docs/deployment/observability.md`.
+
+## Rollback Drill Evidence Matrix
+| Measure | Target | Collection Method | Artifact Location |
+|---------|--------|-------------------|-------------------|
+| Rollback MTTR | ≤ 10 minutes | GitHub Actions `deploy-*.yml` production jobs (`timeout-minutes: 10`) | Actions run summary + `tests/integration/test_rollback_drill.py` evidence |
+| Structured Logs | `{ts, opId, code, duration_ms}` per stage | `printf` step in deploy workflows | Workflow logs exported to Actions artifacts |
+| PDPA Retention Confirmation | Supabase audit log within 48 h | `scripts/run-retention-job.sh --environment production --op-id <id>` | `artifacts/pdpa/<op-id>-<run>.json` |
+| Notification Archive | Success / Failure / Rollback emails | `scripts/send-ci-email.py --event <type>` | `artifacts/notifications/<op-id>-<event>.eml` |
+| Quota Usage | Publish post-release snapshot | `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-<env>` | `artifacts/quotas/<op-id>-<run>.json` + appended markdown table |
+
+### Rollback Drill Procedure Checklist
+1. Trigger rollback workflows with `rollback_tag` input (see quickstart).
+2. Monitor GitHub Actions duration; ensure completion ≤ 10 minutes and export log bundle.
+3. After the retention job step runs, upload the generated JSON from `artifacts/pdpa/` to the compliance folder.
+4. Verify the notification `.eml` artifact exists and forward to the operations distribution list.
+5. Update ReleaseChecklist entry with artifact links and attach to incident ticket if applicable.

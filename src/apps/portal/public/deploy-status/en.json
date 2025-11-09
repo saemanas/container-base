@@ -1,0 +1,7 @@
+{
+  "queued": "Deployment queued",
+  "deploying": "Deployment in progress",
+  "success": "Deployment succeeded",
+  "failure": "Deployment failed",
+  "offline": "Portal offline"
+}

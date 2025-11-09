@@ -19,16 +19,19 @@ This playbook documents how to revert Container Base services within the mandate
      gh api /user/packages/container/package/container-base-api/versions | jq '.[].metadata.container.tags'
      ```
    - Choose the most recent known-good tag (e.g., `v1.2.3`).
+   - Retrieve the digests captured by staging deploys (stored under `artifacts/digests/*.txt` by the CI workflows) to ensure production rollbacks use immutable references.
 
 3. **Trigger Rollback Workflow**
    - API: `gh workflow run deploy-api.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
    - OCR: `gh workflow run deploy-ocr.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
-   - Portal: Re-deploy previous Vercel build via dashboard or `vercel rollback <deployment-id>`.
+   - Portal: `gh workflow run deploy-portal.yml --ref main --field environment=production --field backend_ready_url=<readyz-url>` or use `vercel rollback <deployment-id>` if necessary.
+   - Ensure Supabase migrations are not re-run; consult `scripts/promote-supabase.sh` metadata JSON in `artifacts/supabase/` to confirm most recent RLS smoke-test evidence.
 
 4. **Verify Health**
    - `curl https://api.container-base.com/healthz`
    - `curl https://ocr.container-base.com/healthz`
    - `curl https://portal.container-base.com` (ensure expected version banner).
+   - Confirm Cloudflare propagation by running `dig +short api.container-base.com` and `dig +short portal.container-base.com`; if stale, invoke the Cloudflare purge step manually as described in `deploy-api.yml`.
 
 5. **Communicate Status**
    - Post incident update in Platform channel with timelines and remaining risks.

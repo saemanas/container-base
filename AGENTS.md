@@ -30,7 +30,7 @@ This playbook supersedes prior drafts and folds in the `/refs/docs` canon that o
 | Mobile (Expo SDK 52) | Cross-Platform Engineer | 3-tap capture flow, offline queue + MMKV sync, GPS tagging, credit top-up UX, LINE Login bridge | Offline queue telemetry, queue retry policy, i18n coverage EN/TH |
 | API / DB (FastAPI + Supabase) | Backend Engineer | Typed FastAPI services, SQLModel schemas, `/billing/usage` + `/billing/events` contracts, Supabase RLS policies, audit logging | OpenAPI diff gates, PDPA consent tables, k6/Sentry latency proofs |
 | Vision Worker (YOLOv8n + PaddleOCR) | ML Engineer | `/models/<version>/model.yaml`, evaluation suite, rollback triggers, `/reports/vision-bench.json` accuracy evidence | Δ accuracy ≤3%, inference ≤2 s, version pinning + rollback instructions |
-| Portal (Next.js 14 + shadcn/ui) | Frontend Engineer | App Router layouts, TanStack Query data layer, stateful admin UI, AI dashboard | Empty/Loading/Success/Error/Offline states, design tokens, Storybook demos |
+| Portal (Next.js 16 + shadcn/ui) | Frontend Engineer | App Router layouts, TanStack Query data layer, stateful admin UI, AI dashboard | Empty/Loading/Success/Error/Offline states, design tokens, Storybook demos |
 | Infra & Delivery | Infrastructure Engineer | Supabase + Cloud Run/Render/Fly topology docs, Cloudflare routing, secrets catalog, incident runbooks | Docker Compose parity, rollback ≤10 min, cost ceiling doc |
 | CI/CD | DevOps Engineer | GitHub Actions chain (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR push → Tag deploy), release drafter, rollback workflow | Conventional Commit guard, tag gate, future hooks (Playwright/k6/Trivy/SBOM) scaffolded |
 
@@ -42,7 +42,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 1. **Spec → Plan → Tasks → Implementation → Tests → Verification**. No code without a spec excerpt from `/refs/docs`.
 2. Maintain weekly Product/Platform/Experience triads, bi-weekly ops review, monthly compliance audit.
 3. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + OpenAPI Lint, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
-4. Git discipline: `main` (prod), `develop` (staging), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages.
+4. Git discipline: `main` (prod), `develop` (staging), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages. GitHub branch protection enforces strict status checks, linear history, no force pushes/deletions, admin enforcement, and at least one approving review on `main`/`develop`.
 - Branch workflow: `main` and `develop` are protected; working branches follow the spec-kit naming convention (`NNN-some-spec`, e.g., `001-lowcost-cicd-infra`). Branch from `develop`, complete spec tasks, and merge back via reviewed PRs.
 5. CLI & documentation outputs: code/comments English; CLI summaries Korean; tests and commands shared with teammates must be runnable verbatim.
 
@@ -51,7 +51,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ## 5. Delivery Standards
 ### 5.1 Tooling Baselines (see `refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md`)
 - Python 3.12.x, FastAPI 0.121.0 target, SQLModel 0.0.27, Supabase Python 2.23.x.
-- Node.js 22.21.1 LTS “Jod” (upgrade React Vite starter to Next.js 14.2.33 + React 18.3.1).
+- Node.js 22.21.1 LTS “Jod” (upgrade React Vite starter to Next.js 16.0.1 + React 19.0.0).
 - Expo CLI 54.x, React Native 0.76.3, TanStack Query 5.90.x, MMKV 2.13.x.
 - Vision: Ultralytics 8.3.225, PaddleOCR 3.3.1 (paddlepaddle 3.2.1 / GPU 2.6.2).
 - Tooling: Ruff 0.7.x, ESLint 9.x, Prettier 3.x, Biome 2.2.4 optional, Playwright 1.56.1 (hook stub).
@@ -104,8 +104,8 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 - YOLOv8n + PaddleOCR pipeline with inference under 2 s. Provide benchmarking notebooks/tests referencing `/refs/docs/CB-Service-Plan*`.
 - Implement A/B validation hook and rollback triggers; publish `/reports/vision-bench.json`.
 
-### 6.4 Portal (Next.js 14 App Router)
-- Replace Vite starter with Next.js 14.2.33 + React 18.3.1, shadcn/ui tokens, TanStack Query.
+### 6.4 Portal (Next.js 16 App Router)
+- Replace Vite starter with Next.js 16.0.1 + React 19.0.0, shadcn/ui tokens, TanStack Query.
 - Every feature under `frontend/src/features/<domain>` with Storybook/Playground coverage for all states.
 - Provide AI dashboard for model versions, billing visibility, and alerts.
 
@@ -121,7 +121,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ---
 
 ## 7. Immediate Priorities (Sprint 0)
-1. **Architecture alignment**: finalize Supabase + Cloud Run/Render/Fly topology, Vite → Next.js migration path with milestones.
+1. **Architecture alignment**: finalize Supabase + Cloud Run/Render/Fly topology, Vite → Next.js 16 migration path with milestones.
 2. **Spec bootstrapping**: write Product, API, Portal, Mobile, Vision, Billing specs referencing `/refs/docs`.
 3. **Operational foundations**: stand up GitHub Actions (Ruff/ESLint/Pytest/OpenAPI Lint), tag deployments, secrets catalog.
 4. **Data & compliance prep**: PDPA consent flow, GPS rounding enforcement, automated image retention jobs.
@@ -139,7 +139,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ---
 
 ## 9. Recent Change Snapshot
-- `001-align-project-structure`: upgraded Python 3.12.x (backend/vision) and mandated Node.js 22.21.1 LTS; FastAPI 0.114.2 (target 0.121.0), SQLModel 0.0.27, Supabase Python 2.7.1, React 19.1.1 + Vite 7.1.11, Biome 2.2.4, Playwright 1.56.1. Plan migration toward Next.js 14.2.33 + React 18.3.1 and Supabase enhancements per `/refs/docs`.
+- `001-align-project-structure`: upgraded Python 3.12.x (backend/vision) and mandated Node.js 22.21.1 LTS; FastAPI 0.114.2 (target 0.121.0), SQLModel 0.0.27, Supabase Python 2.7.1, React 19.1.1 + Vite 7.1.11, Biome 2.2.4, Playwright 1.56.1. Plan migration toward Next.js 16.0.1 + React 19.0.0 and Supabase enhancements per `/refs/docs`.
 
 ---
 

@@ -1,0 +1,136 @@
+name: Deploy Portal
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      backend_ready_url:
+        description: "Optional override for backend readiness endpoint"
+        required: false
+        default: ""
+
+concurrency:
+  group: deploy-portal-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "22.21.1"
+  PORTAL_DIR: src/apps/portal
+  STATUS_ASSET_DIR: src/apps/portal/public/deploy-status
+
+jobs:
+  deploy-staging:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for backend readiness
+        env:
+          READY_URL_INPUT: ${{ github.event.inputs.backend_ready_url }}
+          DEFAULT_READY_URL: ${{ secrets.API_READY_URL_STAGING }}
+        run: |
+          set -euo pipefail
+          URL="${READY_URL_INPUT:-${DEFAULT_READY_URL:-https://api-stg.container-base.com/readyz}}"
+          echo "Waiting for backend at $URL"
+          for attempt in 1 2 3 4 5; do
+            if curl -sf "$URL" >/dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            echo "Attempt $attempt failed; retrying in 10s"
+            sleep 10
+          done
+          echo "::error ::Backend readiness check failed for $URL"
+          exit 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --prefix ${{ env.PORTAL_DIR }}
+
+      - name: Build portal
+        run: npm run build --prefix ${{ env.PORTAL_DIR }}
+
+      - name: Verify portal EN/TH status assets
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs'); const required=['${STATUS_ASSET_DIR}/en.json','${STATUS_ASSET_DIR}/th.json']; const missing=required.filter(p=>!fs.existsSync(p)); if(missing.length){console.error('Missing deploy status assets:', missing.join(', ')); process.exit(1);}"
+
+      - name: Deploy via Vercel (placeholder)
+        run: |
+          echo "Simulating Vercel deploy for staging"
+          echo "vercel deploy --prod --token ***"
+
+  deploy-production:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - name: Confirm manual approval
+        run: echo "Production deployment requires environment approval via GitHub."
+
+      - uses: actions/checkout@v4
+
+      - name: Wait for backend readiness
+        env:
+          READY_URL_INPUT: ${{ github.event.inputs.backend_ready_url }}
+          DEFAULT_READY_URL: ${{ secrets.API_READY_URL_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          URL="${READY_URL_INPUT:-${DEFAULT_READY_URL:-https://api.container-base.com/readyz}}"
+          echo "Waiting for backend at $URL"
+          for attempt in 1 2 3 4 5; do
+            if curl -sf "$URL" >/dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            echo "Attempt $attempt failed; retrying in 10s"
+            sleep 10
+          done
+          echo "::error ::Backend readiness check failed for $URL"
+          exit 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm install --prefix ${{ env.PORTAL_DIR }}
+
+      - name: Build portal
+        run: npm run build --prefix ${{ env.PORTAL_DIR }}
+
+      - name: Verify portal EN/TH status assets
+        run: |
+          set -euo pipefail
+          node -e "const fs=require('fs'); const required=['${STATUS_ASSET_DIR}/en.json','${STATUS_ASSET_DIR}/th.json']; const missing=required.filter(p=>!fs.existsSync(p)); if(missing.length){console.error('Missing deploy status assets:', missing.join(', ')); process.exit(1);}"
+
+      - name: Deploy via Vercel (placeholder)
+        run: |
+          echo "Simulating Vercel production deploy"
+          echo "vercel deploy --prod --token ***"
+
+      - name: Post-deploy status reminder
+        run: echo "Verify portal EN/TH deployment statuses visually after production rollout."

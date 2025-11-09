@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DOC="${ROOT_DIR}/docs/deployment/ci-pipeline.md"
 TIMESTAMP="$(date -Iseconds)"
+ARTIFACT_DIR="${MEASURE_CI_ARTIFACT_DIR:-${ROOT_DIR}/artifacts/ci/measure}"
+METRICS_FILE="${ARTIFACT_DIR}/ci-metrics-${TIMESTAMP//:/-}.json"
 
 STAGES=(
   "Ruff::ruff --version"
@@ -15,6 +17,7 @@ STAGES=(
 )
 
 STAGE_ROWS=()
+METRICS_JSON="[]"
 
 log_json() {
   local op_id=$1
@@ -65,6 +68,19 @@ run_stage() {
   fi
 
   STAGE_ROWS+=("| ${label} | ${status} | ${duration} |")
+  METRICS_JSON=$(python3 - <<PY
+import json
+metrics = json.loads(${METRICS_JSON@Q})
+metrics.append({
+    "ts": ${TIMESTAMP@Q},
+    "stage": ${label@Q},
+    "duration_ms": ${duration},
+    "status": ${status@Q},
+    "command": ${cmd@Q}
+})
+print(json.dumps(metrics))
+PY
+  )
 }
 
 for stage in "${STAGES[@]}"; do
@@ -77,6 +93,15 @@ for stage in "${STAGES[@]}"; do
   fi
 done
 
+mkdir -p "${ARTIFACT_DIR}"
+python3 - <<PY >"${METRICS_FILE}"
+import json
+import sys
+metrics = json.loads(${METRICS_JSON@Q})
+json.dump(metrics, sys.stdout, indent=2)
+sys.stdout.write("\n")
+PY
+
 {
   printf '\n## CI Timing Snapshot (%s)\n\n' "${TIMESTAMP}"
   printf '| Stage | Status | Duration (ms) |\n| --- | --- | --- |\n'
@@ -86,3 +111,4 @@ done
 } >>"${OUT_DOC}"
 
 log_json "measure-ci" "DONE" "Report appended" "\"${OUT_DOC}\""
+log_json "measure-ci" "INFO" "Metrics stored" "\"${METRICS_FILE}\""
