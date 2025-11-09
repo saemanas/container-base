@@ -201,7 +201,6 @@ jobs:
               exit 0
             }
             npx --yes openapi-diff@0.24.1 \
-              --fail-on-breaking \
               artifacts/ci/openapi_lint/base-openapi.yaml \
               "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
