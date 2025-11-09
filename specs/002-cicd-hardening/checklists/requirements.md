@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2025-11-09  
-**Feature**: [specs/001-cicd-hardening/spec.md](../spec.md)
+**Feature**: [specs/002-cicd-hardening/spec.md](../spec.md)
 
 ## Content Quality
 

@@ -1,9 +1,17 @@
 # Feature Specification: CI/CD Hardening & Multicloud Release Readiness
 
-**Feature Branch**: `001-cicd-hardening`  
+**Feature Branch**: `002-cicd-hardening`  
 **Created**: 2025-11-09  
 **Status**: Draft  
 **Input**: User description: "Harden CI/CD so every non-mobile component reaches CI pass gates and production CD readiness across Cloudflare domain, Cloud Run (API/OCR worker), Vercel (portal), and Supabase DB through main→production automation."
+
+## Clarifications
+
+### Session 2025-11-09
+
+- Q: Where should long-term CI/CD evidence artifacts live for audit readiness? → A: Store them in GitHub Actions artifacts with extended retention windows.
+- Q: What is the required Supabase migration promotion flow to keep RLS evidence intact? → A: Run migrations in staging with Supabase CLI RLS smoke tests, then promote the same scripts to production.
+- Q: Which channel must receive CI/CD run notifications? → A: Deliver notifications via the designated operations email distribution.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -64,16 +72,17 @@ The compliance lead needs the CI/CD system to capture evidence for rollback rehe
 ### Functional Requirements
 
 - **FR-001**: CI for API and OCR worker MUST execute the mandated order Ruff → ESLint → Pytest → Redocly → Build → GHCR push → Tag gate for every pull request touching non-mobile code (`refs/docs/CB-Instruction-v1.0.0-en-US.md §4.7`).
-- **FR-002**: CI MUST publish structured artifacts (logs, coverage, k6/Profiler evidence) so release managers can attach them to compliance reviews before merging to `main`.
+- **FR-002**: CI MUST publish structured artifacts (logs, coverage, k6/Profiler evidence) as long-retained GitHub Actions artifacts so release managers can attach them to compliance reviews before merging to `main`.
 - **FR-003**: CD MUST promote Cloud Run services (API + OCR worker) using immutable GHCR image digests and must surface rollback commands within the same workflow run.
 - **FR-004**: CD MUST configure Cloudflare DNS + zero-downtime rules referencing the latest deployment manifest and verify propagation before marking production complete.
-- **FR-005**: CD MUST trigger Supabase migrations, PDPA consent enforcement jobs, and RLS policy verification with auditable logs kept for ≥12 months (`refs/docs/CB-Instruction-v1.0.0-en-US.md §4.6`).
+- **FR-005**: CD MUST trigger Supabase migrations first in staging, execute Supabase CLI RLS smoke tests, and only then promote identical scripts to production while logging PDPA consent enforcement and storing evidence for ≥12 months (`refs/docs/CB-Instruction-v1.0.0-en-US.md §4.6`).
 - **FR-006**: Vercel deployments MUST execute after successful backend promotions and confirm the portal build artifact renders Empty/Loading/Success/Error/Offline states using EN/TH keys (`refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md §Portal`).
-- **FR-007**: Release workflows MUST require manual approval before pushing to production unless a tagged rollback is invoked, in which case automation must run immediately with notification hooks.
+- **FR-007**: Release workflows MUST require manual approval before pushing to production unless a tagged rollback is invoked, in which case automation must run immediately with notification hooks; manual approvals are enforced via GitHub Environment protection rules that require Admin/Operator review.
 - **FR-008**: All secrets MUST be injected via GitHub Environments and mirrored in `.env.example` placeholders; workflows may not echo secret values.
 - **FR-009**: Observability hooks MUST capture `{ts, opId, code, duration_ms}` for every CI/CD stage and forward them to the existing dashboards referenced in `refs/docs/CB-MiniOps-v1.0.0-en-US.md`.
-- **FR-010**: Portal build validation MUST confirm compatibility with the officially mandated Next.js 16 / React 19 stack from `refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md`, and CI/CD must fail if artifacts regress to older baselines documented in prior AGENTS drafts.
-- **FR-011**: CD MUST exclude the mobile client while still producing documentation about where mobile would hook in once coverage expands, so scope remains aligned to the user request.
+- **FR-010**: Portal build validation MUST confirm compatibility with the officially mandated Next.js 16 / React 19 stack from `refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md`, and CI/CD must fail if artifacts regress to older baselines documented in prior AGENTS drafts through an automated stack version guard in CI.
+- **FR-011**: CD MUST exclude the mobile client while still producing documentation about where mobile would hook in once coverage expands, with the current handoff captured in `docs/deployment/ci-pipeline.md#mobile-ready` so scope remains aligned to the user request.
+- **FR-012**: CI/CD notifications MUST trigger email delivery to the designated operations distribution list (e.g., GitHub notification emails) for every success, failure, and rollback event.
 
 ### Key Entities *(include if feature involves data)*
 
