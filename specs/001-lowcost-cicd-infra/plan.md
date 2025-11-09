@@ -26,10 +26,10 @@ Stand up a monorepo skeleton and low-cost CI/CD topology so API, OCR worker, por
 *GATE: Passed (Context7 MCP verified 2025-11-09; docs cited in spec).*
 
 - **Spec-to-Verification Discipline**: Spec is approved and cited; plan → tasks → implementation sequencing will follow Spec-kit outputs (research.md, plan.md, data-model.md, quickstart.md, contracts/, tasks.md).@specs/001-lowcost-cicd-infra/spec.md#1-118 @.specify/memory/constitution.md#24-39
-- **Test-First Observability**: CI pipeline runs Ruff/ESLint/Pytest/Spectral before build; health checks `/healthz` `/readyz`, structured logs, and k6/Sentry hooks maintain KPI visibility (API P95 ≤3s, rollback ≤10m).@specs/001-lowcost-cicd-infra/spec.md#10-109 @.specify/memory/constitution.md#32-39
+- **Test-First Observability**: CI pipeline runs Ruff/ESLint/Pytest/OpenAPI Lint before build; health checks `/healthz` `/readyz`, structured logs, and k6/Sentry hooks maintain KPI visibility (API P95 ≤3s, rollback ≤10m).@specs/001-lowcost-cicd-infra/spec.md#10-109 @.specify/memory/constitution.md#32-39
 - **PDPA-Safe Data Stewardship**: Supabase RLS, GPS rounding, consent gating, secrets via GitHub environments with `.env.example` placeholders, retention automation tracked in guardrails.@specs/001-lowcost-cicd-infra/spec.md#63-103 @.specify/memory/constitution.md#40-46
 - **Instant, Resilient, Clear UX**: Ensure mobile/portal flows stay within 3 taps, maintain offline queue states, EN/TH i18n keys, and role-based visibility across admin surfaces.@specs/001-lowcost-cicd-infra/spec.md#99-104 @.specify/memory/constitution.md#48-55
-- **Automated CI/CD & Versioned Releases**: Uphold Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy order, enforce manual prod approvals, document rollback ≤10m, align contracts/models with single sources of truth.@specs/001-lowcost-cicd-infra/spec.md#63-118 @.specify/memory/constitution.md#56-63
+- **Automated CI/CD & Versioned Releases**: Uphold Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy order, enforce manual prod approvals, document rollback ≤10m, align contracts/models with single sources of truth.@specs/001-lowcost-cicd-infra/spec.md#63-118 @.specify/memory/constitution.md#56-63
 - **Stack & Infrastructure Alignment**: Target Python 3.12, Node 22.21.1, Expo 54, Next.js 14, Supabase, Cloud Run, Vercel, Cloudflare; monitor via Cloud Run logs, Vercel metrics, Supabase dashboards, optional Sentry/Grafana.@specs/001-lowcost-cicd-infra/spec.md#25-109 @.specify/memory/constitution.md#64-79
 
 ## Project Structure

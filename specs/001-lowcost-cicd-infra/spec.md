@@ -17,7 +17,7 @@ Infrastructure engineer sets up the shared repository skeleton and GitHub Action
 
 **Acceptance Scenarios**:
 
-1. **Given** the repo on GitHub, **When** a PR is opened, **Then** Ruff/ESLint/Pytest/Spectral tasks run per app and report success or actionable failures.  
+1. **Given** the repo on GitHub, **When** a PR is opened, **Then** Ruff/ESLint/Pytest/OpenAPI Lint tasks run per app and report success or actionable failures.  
 2. **Given** a merge to `main`, **When** the pipeline finishes, **Then** Cloud Run receives updated API/OCR images and Vercel receives a portal build preview without exceeding free-tier quotas.
 
 ---
@@ -70,7 +70,7 @@ Operations analyst documents and enforces where secrets live (GitHub, platform e
 - **FR-006**: Define health/ready endpoints, MAX_IMAGE_MB, TIMEOUT_MS guardrails, Cloud Run concurrency (target 5 per instance), and logging schema `{ts, opId, code, duration_ms}` for API and OCR services to support observability and SLA monitoring.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#37-63 @refs/docs/CB-MiniOps-v1.0.0-en-US.md#211-219 @AGENTS.md#37-40
 - **FR-007**: Provide local development instructions enabling mobile, API, OCR, and portal services to run concurrently with Supabase remote connection and CORS configuration.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#140-155
 - **FR-008**: Establish cost and scaling guardrails, including upgrade triggers for performance, load, stability, and cost, with runbooks for responding when thresholds are crossed.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#201-229
-- **FR-009**: Create rollback and incident response playbooks that ensure deployments can revert to prior tags within 10 minutes and align with CI/CD governance flow (Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy).@AGENTS.md#60-64
+- **FR-009**: Create rollback and incident response playbooks that ensure deployments can revert to prior tags within 10 minutes and align with CI/CD governance flow (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy).@AGENTS.md#60-64
 
 ### Key Entities *(include if feature involves data)*
 
@@ -83,7 +83,7 @@ Operations analyst documents and enforces where secrets live (GitHub, platform e
 
 ### Measurable Outcomes
 
-- **SC-001**: PR pipelines complete Ruff, ESLint, Pytest, and Spectral stages for API/OCR/portal within 12 minutes median and 100% success rate for green builds over rolling 14 days.
+- **SC-001**: PR pipelines complete Ruff, ESLint, Pytest, and OpenAPI Lint stages for API/OCR/portal within 12 minutes median and 100% success rate for green builds over rolling 14 days.
 - **SC-002**: Deployments to Cloud Run and Vercel finish within 5 minutes per service and maintain API/OCR P95 latency ≤3s post-deploy with ≤10-minute rollback MTTR when failures occur.
 - **SC-003**: Secrets catalog coverage reaches 100% of required keys before first deploy, with quarterly rotation reminders and zero leaked credentials in repository history.
 - **SC-004**: Cloud Run, Supabase, and Vercel usage stays ≤80% of free-tier quotas in steady state, with documented actions ready when thresholds are exceeded.

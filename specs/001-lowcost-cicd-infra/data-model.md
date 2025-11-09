@@ -9,7 +9,7 @@
   - `app` (enum: `api`, `ocr-worker`, `portal`, `mobile`)
   - `workflow_file` (string path)
   - `triggers` (list of git events)
-  - `stages` (ordered list: Ruff, ESLint, Pytest, Spectral, Build, GHCR Push, Tag Deploy)
+  - `stages` (ordered list: Ruff, ESLint, Pytest, OpenAPI Lint, Build, GHCR Push, Tag Deploy)
   - `approval_required` (boolean, production only)
   - `artifacts` (list of generated images/build outputs)
 - **Relationships**: Linked to `DeploymentSurface` via `app`.

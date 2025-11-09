@@ -19,7 +19,7 @@
 
 ## Best Practices
 
-- GitHub Actions pipeline order remains Ruff → ESLint → Pytest → Spectral → Build → GHCR push → Tag deploy.
+- GitHub Actions pipeline order remains Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR push → Tag deploy.
 - Secrets managed exclusively via GitHub/Vercel/Cloud Run environment variables with `.env.example` placeholders.
 - Health checks: `/healthz` for liveness, `/readyz` for DB/model readiness; enforce MAX_IMAGE_MB, TIMEOUT_MS.
 - Logging schema `{ts, opId, code, duration_ms}` across services; capture metrics for API p95, OCR failure rate, Cloud Run quota usage.

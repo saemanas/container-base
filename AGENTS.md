@@ -32,7 +32,7 @@ This playbook supersedes prior drafts and folds in the `/refs/docs` canon that o
 | Vision Worker (YOLOv8n + PaddleOCR) | ML Engineer | `/models/<version>/model.yaml`, evaluation suite, rollback triggers, `/reports/vision-bench.json` accuracy evidence | Δ accuracy ≤3%, inference ≤2 s, version pinning + rollback instructions |
 | Portal (Next.js 14 + shadcn/ui) | Frontend Engineer | App Router layouts, TanStack Query data layer, stateful admin UI, AI dashboard | Empty/Loading/Success/Error/Offline states, design tokens, Storybook demos |
 | Infra & Delivery | Infrastructure Engineer | Supabase + Cloud Run/Render/Fly topology docs, Cloudflare routing, secrets catalog, incident runbooks | Docker Compose parity, rollback ≤10 min, cost ceiling doc |
-| CI/CD | DevOps Engineer | GitHub Actions chain (Ruff → ESLint → Pytest → Spectral → Build → GHCR push → Tag deploy), release drafter, rollback workflow | Conventional Commit guard, tag gate, future hooks (Playwright/k6/Trivy/SBOM) scaffolded |
+| CI/CD | DevOps Engineer | GitHub Actions chain (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR push → Tag deploy), release drafter, rollback workflow | Conventional Commit guard, tag gate, future hooks (Playwright/k6/Trivy/SBOM) scaffolded |
 
 Agents operate as a single swarm: spec everything, cite sources, and treat OpenAPI contracts plus shared DTOs in `contracts/` as the system of record.
 
@@ -41,7 +41,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ## 4. Operating Protocol
 1. **Spec → Plan → Tasks → Implementation → Tests → Verification**. No code without a spec excerpt from `/refs/docs`.
 2. Maintain weekly Product/Platform/Experience triads, bi-weekly ops review, monthly compliance audit.
-3. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + Spectral, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
+3. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + OpenAPI Lint, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
 4. Git discipline: `main` (prod), `develop` (staging), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages.
 - Branch workflow: `main` and `develop` are protected; working branches follow the spec-kit naming convention (`NNN-some-spec`, e.g., `001-lowcost-cicd-infra`). Branch from `develop`, complete spec tasks, and merge back via reviewed PRs.
 5. CLI & documentation outputs: code/comments English; CLI summaries Korean; tests and commands shared with teammates must be runnable verbatim.
@@ -114,8 +114,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 - Compose-based local parity, GHCR image tagging, release drafter integration.
 - Incident checklist aligning with monthly compliance audit; ensure PDPA logs stored.
 
-### 6.6 CI/CD
-- GitHub Actions pipeline order: Ruff → ESLint → Pytest → Spectral → Build → GHCR push → Tag deploy.
+- GitHub Actions pipeline order: Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR push → Tag deploy.
 - Future hooks (Playwright, k6, Trivy, SBOM) stubbed but optional for MVP; ensure toggles exist.
 - Automated tag deploy + rollback ≤10 min; missing tag triggers release checklist reminder.
 
@@ -124,7 +123,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ## 7. Immediate Priorities (Sprint 0)
 1. **Architecture alignment**: finalize Supabase + Cloud Run/Render/Fly topology, Vite → Next.js migration path with milestones.
 2. **Spec bootstrapping**: write Product, API, Portal, Mobile, Vision, Billing specs referencing `/refs/docs`.
-3. **Operational foundations**: stand up GitHub Actions (Ruff/ESLint/Pytest/Spectral), tag deployments, secrets catalog.
+3. **Operational foundations**: stand up GitHub Actions (Ruff/ESLint/Pytest/OpenAPI Lint), tag deployments, secrets catalog.
 4. **Data & compliance prep**: PDPA consent flow, GPS rounding enforcement, automated image retention jobs.
 
 ---
@@ -145,7 +144,7 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 ---
 
 ## 10. Definition of Done Checklist
-- ✅ Ruff, ✅ ESLint, ✅ Pytest (coverage ≥70%, auth/upload/recognition =100%), ✅ Spectral.
+- ✅ Ruff, ✅ ESLint, ✅ Pytest (coverage ≥70%, auth/upload/recognition =100%), ✅ OpenAPI Lint.
 - ✅ Docker Compose services boot + smoke tests documented.
 - ✅ Performance proofs (k6/Sentry/Profiler) stored in PR artifacts.
 - ✅ Logs follow `{ ts, opId, code, duration_ms }`.

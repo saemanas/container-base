@@ -23,7 +23,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Core configuration files that must exist before attempting to run the CI workflow locally.
 EXPECT_FILES=(".ruff.toml" ".eslintrc.cjs" ".prettierrc" ".github/workflows")
 # Guardrail sequence enforced by the constitution; log the expected order for quick comparison.
-STAGES=("Ruff" "ESLint" "Pytest" "Spectral" "Build" "GHCR" "Tag Deploy")
+STAGES=("Ruff" "ESLint" "Pytest" "OpenAPI Lint" "Build" "GHCR" "Tag Deploy")
 # Base tooling required to execute the pipeline steps locally.
 REQUIRED_COMMANDS=("python3" "npm" "docker")
 REQUIRED_ENV=(

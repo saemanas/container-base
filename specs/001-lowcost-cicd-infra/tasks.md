@@ -12,7 +12,7 @@
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
-- Each story must contain: PDPA compliance tasks (consent, RLS, masking), UX state coverage (Empty/Loading/Success/Error/Offline), observability/logging updates, and CI/CD validation steps (Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy).
+- Each story must contain: PDPA compliance tasks (consent, RLS, masking), UX state coverage (Empty/Loading/Success/Error/Offline), observability/logging updates, and CI/CD validation steps (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy).
 
 ## Phase 1: Setup (Shared Infrastructure)
 
@@ -47,12 +47,12 @@
 
 **Goal**: CI pipeline automatically lint/tests/builds all workloads and prepares deploy artifacts within free-tier limits.
 
-**Independent Test**: Run GitHub Actions `ci.yml` on a PR and confirm Ruff/ESLint/Pytest/Spectral/Build/GHCR stages pass and publish artifacts.
+**Independent Test**: Run GitHub Actions `ci.yml` on a PR and confirm Ruff/ESLint/Pytest/OpenAPI Lint/Build/GHCR stages pass and publish artifacts.
 
 ### Tests for User Story 1 (MANDATORY — write before implementation) ⚠️
 
 - [X] T012 [P] [US1] Author pipeline contract test in `tests/backend/test_ci_guardrails.py` validating workflow stages
-- [X] T013 [P] [US1] Create Spectral lint test stub for OpenAPI contract in `tests/contract/test_health_contract.py`
+- [X] T013 [P] [US1] Create OpenAPI lint test stub (Redocly CLI) for contract in `tests/contract/test_health_contract.py`
 
 ### Implementation for User Story 1
 

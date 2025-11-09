@@ -132,4 +132,4 @@
 
 - Identify which KPIs/SLA budgets this feature moves (FPRR ≥90%, API P95 ≤3s, rollback ≤10m, etc.).
 - Specify metrics, logs `{ts, opId, code, duration_ms}`, dashboards, and `/reports/vision-bench.json` updates needed.
-- Outline CI/CD hooks (Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy) and rollback validation steps.
+- Outline CI/CD hooks (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy) and rollback validation steps.

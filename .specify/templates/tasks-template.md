@@ -17,7 +17,7 @@ description: "Task list template for feature implementation"
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
-- Each story must contain: PDPA compliance tasks (consent, RLS, masking), UX state coverage (Empty/Loading/Success/Error/Offline), observability/logging updates, and CI/CD validation steps (Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy).
+- Each story must contain: PDPA compliance tasks (consent, RLS, masking), UX state coverage (Empty/Loading/Success/Error/Offline), observability/logging updates, and CI/CD validation steps (Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy).
 
 ## Path Conventions
 

@@ -8,6 +8,7 @@
 | API_JWT_SECRET | GitHub Actions secrets | API | `stg-jwt-secret` | `prod-jwt-secret` | Monthly |
 | OCR_MAX_IMAGE_MB | Cloud Run env vars | OCR Worker | `15` | `20` | As needed |
 | OCR_TIMEOUT_MS | Cloud Run env vars | OCR Worker | `15000` | `20000` | As needed |
+| PROJECT_TOKEN | GitHub Actions secrets | CI/CD | `ghcr-personal-access-token` | `ghcr-personal-access-token` | Rotate on PAT regeneration |
 | PORTAL_API_BASE_URL | Vercel env vars | Portal | `https://api-stg.container-base.com` | `https://api.container-base.com` | As needed |
 | PORTAL_LINE_REDIRECT | Vercel env vars | Portal | `https://portal-stg.container-base.com/callback` | `https://portal.container-base.com/callback` | As needed |
 | MOBILE_API_BASE_URL | Expo EAS secrets | Mobile | `https://api-stg.container-base.com` | `https://api.container-base.com` | Quarterly |

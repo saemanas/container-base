@@ -25,7 +25,7 @@ def ci_workflow() -> dict:
 def test_ci_has_expected_jobs(ci_workflow: dict) -> None:
     """Ensure the CI pipeline defines all mandated stages."""
 
-    # Given the MiniOps constitution mandates Ruff → ESLint → Pytest → Spectral → Build → GHCR → Tag Deploy
+    # Given the MiniOps constitution mandates Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy
     jobs = ci_workflow.get("jobs", {})
     stage_order = list(jobs)
 
@@ -33,7 +33,7 @@ def test_ci_has_expected_jobs(ci_workflow: dict) -> None:
         "ruff",
         "eslint",
         "pytest",
-        "spectral",
+        "openapi_lint",
         "build",
         "ghcr",
         "tag_deploy",

@@ -64,7 +64,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 - Never commit directly to protected branches; always open a PR from your spec branch.
 
 ### CI / CD Pipeline
-- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → Spectral (Redocly CLI) → Build → GHCR push.
+- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → OpenAPI Lint (Redocly CLI) → Build → GHCR push.
 - Deployment workflows (`deploy-api.yml`, `deploy-ocr.yml`, `deploy-portal.yml`) publish Cloud Run/Vercel artifacts. Staging auto deploys on `develop`; production requires manual approval and tag selection.
 - `scripts/validate-ci.sh` verifies mandatory files and secrets locally before running `act`.
 - `scripts/measure-ci.sh` can be executed to capture stage runtimes and append them to `docs/deployment/ci-pipeline.md` for trend analysis.

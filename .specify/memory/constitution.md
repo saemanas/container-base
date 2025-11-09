@@ -58,7 +58,7 @@ Rationale: Frontline operators adopt CB only when the experience is instant, res
 ### Automated CI/CD & Versioned Releases
 Non-negotiable rules:
 - Branch policy: `main` (production), `develop` (staging), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks.
-- CI pipeline order is immutable: Ruff → ESLint → Pytest → Spectral → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
+- CI pipeline order is immutable: Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
 - Release Drafter creates notes on every `main` merge; semantic tags (vX.Y.Z) trigger production deploys via Cloud Run/Render/Fly, and rollback by redeploying the previous tag must finish ≤10 minutes.
 - OpenAPI schemas, `/billing/*` contracts, model manifests (`/models/<version>/model.yaml`), and shared DTOs in `contracts/` are the single source of truth; downstream code consumes generated clients only.
 Rationale: Automation keeps the free-tier stack reliable, transparent, and ready for rollback without human toil.
