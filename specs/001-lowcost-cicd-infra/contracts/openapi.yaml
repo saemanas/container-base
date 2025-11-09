@@ -24,6 +24,16 @@ paths:
                   status:
                     type: string
                     example: ok
+        '429':
+          description: Probe throttled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: too_many_requests
         '503':
           description: Service unavailable
           content:
@@ -49,6 +59,16 @@ paths:
                   status:
                     type: string
                     example: ok
+        '429':
+          description: Probe throttled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: too_many_requests
         '503':
           description: Dependencies not ready
           content:
