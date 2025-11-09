@@ -200,9 +200,14 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
+            cp "$SPEC_PATH" artifacts/ci/openapi_lint/head-openapi.yaml
+            for spec in base-openapi head-openapi; do
+              sed -i.bak 's/^openapi: 3\.1\.0$/openapi: 3.0.3/' "artifacts/ci/openapi_lint/${spec}.yaml"
+              rm -f "artifacts/ci/openapi_lint/${spec}.yaml.bak"
+            done
             npx --yes openapi-diff@0.24.1 \
               artifacts/ci/openapi_lint/base-openapi.yaml \
-              "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+              artifacts/ci/openapi_lint/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
