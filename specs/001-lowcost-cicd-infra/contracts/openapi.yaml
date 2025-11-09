@@ -34,6 +34,16 @@ paths:
                   status:
                     type: string
                     example: too_many_requests
+        '4XX':
+          description: Client error probing service
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: client_error
         '503':
           description: Service unavailable
           content:
@@ -69,6 +79,16 @@ paths:
                   status:
                     type: string
                     example: too_many_requests
+        '4XX':
+          description: Client error probing dependencies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: client_error
         '503':
           description: Dependencies not ready
           content:
