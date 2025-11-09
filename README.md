@@ -17,57 +17,62 @@ Container Base replaces manual container logging with automated recognition, GPS
 └── tests/                      # Pytest suites for contracts, PDPA, guardrails
 ```
 
+> Folder strategy keeps each surface in its own build context while centralizing governance assets and workflows.@specs/001-lowcost-cicd-infra/plan.md#47-79
+
 ## Getting Started
 
-1. **Clone the repo and switch to the feature branch**
+1. **Clone the repo and sync staging branch**
    ```bash
    git clone https://github.com/saemanas/container-base.git
    cd container-base
-   git checkout 001-lowcost-cicd-infra
+   git checkout develop
+   git pull origin develop
    ```
-2. **Create a Python virtual environment (recommended)**
+2. **Create a feature branch (spec-kit naming)**
+   ```bash
+   git checkout -b NNN-some-spec
+   ```
+   Replace `NNN-some-spec` with the spec identifier (e.g., `002-billing-api`).
+3. **Create a Python virtual environment (recommended)**
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate
    python -m pip install --upgrade pip
    ```
-3. **Install dependencies**
+4. **Install dependencies**
    ```bash
    python -m pip install -r src/apps/api/requirements.txt
    python -m pip install -r src/apps/ocr-worker/requirements.txt
    npm install --prefix src/apps/portal
    npx expo install --cwd src/apps/mobile
    ```
-4. **Run local validation before committing**
+5. **Run local validation before committing**
    ```bash
    ./scripts/run-all-checks.sh
    ```
    The script executes Ruff, Pytest, and ESLint to mirror CI checks.
-
-5. **Populate environment templates**
+6. **Populate environment templates**
    - Fill in the placeholder values inside `src/apps/*/.env.example`.
    - Real secrets belong in GitHub Actions, Cloud Run, Supabase, Vercel, and Expo secret stores (see `docs/deployment/secrets-catalog.md`).
-
-6. **Run services locally**
+7. **Bootstrap services locally**
    ```bash
-   export SUPABASE_URL=https://container-base-stg.supabase.co
-   export SUPABASE_ANON_KEY=anon-key
    ./scripts/run-local.sh
    ```
+   The launcher coordinates API, OCR worker, portal, and mobile dev servers while tailing logs for each surface.@scripts/run-local.sh#1-115
+
+## Continuous Integration
+
+- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → OpenAPI Lint (Redocly CLI) → Build → GHCR push.
+- `scripts/validate-ci.sh` verifies mandatory files and secrets locally before running `act`.
+- `scripts/measure-ci.sh` captures stage runtimes and appends them to `docs/deployment/ci-pipeline.md` for trend analysis.
+- Tests live under `tests/` and include CI guardrails, contract linting, and deployment smoke suites.@tests/backend/test_ci_guardrails.py#25-44 @tests/contract/test_health_contract.py#1-40 @tests/integration/test_cloud_run.py#1-34
 
 ## Deployment
 
 ### Branch Workflow
 - `main`: Production branch (protected). Only release-ready changes merge here.
 - `develop`: Staging branch (protected). Integrates validated spec branches before release.
-- `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `001-lowcost-cicd-infra`). Create from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
-- Never commit directly to protected branches; always open a PR from your spec branch.
-
-### CI / CD Pipeline
-- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → OpenAPI Lint (Redocly CLI) → Build → GHCR push.
-- Deployment workflows (`deploy-api.yml`, `deploy-ocr.yml`, `deploy-portal.yml`) publish Cloud Run/Vercel artifacts. Staging auto deploys on `develop`; production requires manual approval and tag selection.
-- `scripts/validate-ci.sh` verifies mandatory files and secrets locally before running `act`.
-- `scripts/measure-ci.sh` can be executed to capture stage runtimes and append them to `docs/deployment/ci-pipeline.md` for trend analysis.
+- `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `002-billing-api`). Branch from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
 
 ### Deploy Checklist
 1. **Activate environment**
@@ -79,7 +84,7 @@ Container Base replaces manual container logging with automated recognition, GPS
    ```bash
    pytest tests/backend/test_pdpa_compliance.py tests/worker/test_ocr_pdpa.py
    ```
-3. **Kick off staging deploy** (built-in auto deploy on `develop`, or manual trigger):
+3. **Kick off staging deploy** (auto on `develop`, or manual trigger):
    ```bash
    gh workflow run deploy-api.yml --ref develop --field environment=staging
    gh workflow run deploy-ocr.yml --ref develop --field environment=staging
@@ -109,16 +114,24 @@ Container Base replaces manual container logging with automated recognition, GPS
    - Run `python scripts/check-free-tier.py --append` after release to record quota usage.
    - Optionally execute `python scripts/measure-latency.py --iterations 10` and log results per `docs/deployment/cost-guardrails.md`.
 
-## Observability & Guardrails
+## Operational Playbooks
+
 - `docs/deployment/observability.md` lists dashboards (Cloud Run, Supabase, Vercel) and automation scripts.
-- `docs/deployment/cost-guardrails.md` documents quota triggers (≥80%) and the remediation playbook.
-- `scripts/measure-ci.sh`, `scripts/measure-latency.py`, and `scripts/check-free-tier.py` assist with performance and quota tracking.
+- `docs/deployment/pdpa-playbook.md` captures consent workflows and retention obligations.
+- `docs/deployment/secrets-catalog.md` tracks secrets locations, scopes, and rotation cadence.
+- `docs/deployment/supabase-schema.md` documents environment-specific schema and RLS.
 
-## Static Typing Policy
-Per `AGENTS.md` and the constitution, **all Python services must use explicit static typing**:
-- Function signatures annotated; no implicit `Any`.
-- Data validation handled via Pydantic (or equivalent) models.
-- Ruff/pyright must pass.
+## Governance & Typing Policy
 
-## License
-Internal project – see organization guidelines for distribution limits.
+- Spec-kit flow is mandatory: Spec → Plan → Tasks → Implementation → Tests → Verification (see `AGENTS.md`).
+- Python services must use explicit static typing—annotated functions, Pydantic (or equivalent) validation, and Ruff/pyright cleanliness.
+- CI/CD governance expects OpenAPI contracts in `contracts/` to remain canonical; downstream code consumes generated assets only.
+
+## Roadmap & Further Reading
+
+- `specs/001-lowcost-cicd-infra/` contains the reference spec, plan, research, and task backlog for the initial infrastructure feature set.
+- `refs/docs/` hosts the CB charter, service plan, stack baselines, and UX standards that every new feature must cite.
+
+---
+
+Internal project – follow organization guidelines for distribution limits and PDPA compliance.
