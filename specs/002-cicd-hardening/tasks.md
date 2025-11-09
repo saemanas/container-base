@@ -99,16 +99,16 @@
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Add automated rollback drill test in `tests/integration/test_rollback_drill.py` verifying ≤10 minute completion@specs/002-cicd-hardening/spec.md#46-60
-- [ ] T027 [P] [US3] Add unit test for PDPA retention job triggers in `tests/backend/test_pdpa_retention_job.py`@specs/002-cicd-hardening/spec.md#46-60
+- [ ] T028 [P] [US3] Add automated rollback drill test in `tests/integration/test_rollback_drill.py` verifying ≤10 minute completion@specs/002-cicd-hardening/spec.md#46-60
+- [ ] T029 [P] [US3] Add unit test for PDPA retention job triggers in `tests/backend/test_pdpa_retention_job.py`@specs/002-cicd-hardening/spec.md#46-60
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Update rollback workflow (`deploy-api.yml`, `deploy-ocr.yml`) to enforce ≤10 minute timer and capture structured logs@specs/002-cicd-hardening/spec.md#46-60
-- [ ] T029 [P] [US3] Integrate PDPA retention job trigger into CD pipeline with Supabase confirmation logging (`scripts/run-retention-job.sh`)@specs/002-cicd-hardening/spec.md#50-60 @specs/002-cicd-hardening/spec.md#96-111
-- [ ] T030 [P] [US3] Implement email notification sender (`scripts/send-ci-email.py`) that archives notifications to GitHub artifacts@specs/002-cicd-hardening/spec.md#12-15 @specs/002-cicd-hardening/spec.md#70-85
-- [ ] T031 [US3] Update observability documentation (`docs/deployment/observability.md`) with rollback drill metrics and artifact references@specs/002-cicd-hardening/spec.md#46-103
-- [ ] T032 [US3] Configure `scripts/check-free-tier.py` to append post-deploy quota metrics into artifacts@README.md#114-116 @specs/002-cicd-hardening/spec.md#87-103
+- [ ] T030 [US3] Update rollback workflow (`deploy-api.yml`, `deploy-ocr.yml`) to enforce ≤10 minute timer and capture structured logs@specs/002-cicd-hardening/spec.md#46-60
+- [ ] T031 [P] [US3] Integrate PDPA retention job trigger into CD pipeline with Supabase confirmation logging (`scripts/run-retention-job.sh`)@specs/002-cicd-hardening/spec.md#50-60 @specs/002-cicd-hardening/spec.md#96-111
+- [ ] T032 [P] [US3] Implement email notification sender (`scripts/send-ci-email.py`) that archives notifications to GitHub artifacts@specs/002-cicd-hardening/spec.md#12-15 @specs/002-cicd-hardening/spec.md#70-85
+- [ ] T033 [US3] Update observability documentation (`docs/deployment/observability.md`) with rollback drill metrics and artifact references@specs/002-cicd-hardening/spec.md#46-103
+- [ ] T034 [US3] Configure `scripts/check-free-tier.py` to append post-deploy quota metrics into artifacts@README.md#114-116 @specs/002-cicd-hardening/spec.md#87-103
 
 **Checkpoint**: All user stories independently validated with compliance evidence
 
@@ -118,12 +118,12 @@
 
 **Purpose**: Improvements impacting multiple stories
 
-- [ ] T033 [P] Refresh `docs/deployment/ci-pipeline.md` diagrams and include notification email samples@specs/002-cicd-hardening/spec.md#12-85
-- [ ] T034 Document mobile out-of-scope handoff in `docs/deployment/ci-pipeline.md#mobile-ready` per FR-011@specs/002-cicd-hardening/spec.md#74-85
-- [ ] T035 Refine README quickstart section to reflect updated scripts and notification flow@README.md#49-117 @specs/002-cicd-hardening/quickstart.md#1-82
-- [ ] T036 [P] Add monitoring dashboard links for new metrics in `docs/deployment/observability.md`@specs/002-cicd-hardening/spec.md#87-103
-- [ ] T037 Conduct security review of GitHub environments and confirm `.env.example` parity@specs/002-cicd-hardening/spec.md#96-111
-- [ ] T038 [P] Run quickstart validation end-to-end and log results in `docs/deployment/release-checklist.md`@specs/002-cicd-hardening/quickstart.md#1-82
+- [ ] T035 [P] Refresh `docs/deployment/ci-pipeline.md` diagrams and include notification email samples@specs/002-cicd-hardening/spec.md#12-85
+- [ ] T036 Document mobile out-of-scope handoff in `docs/deployment/ci-pipeline.md#mobile-ready` per FR-011@specs/002-cicd-hardening/spec.md#74-85
+- [ ] T037 Refine README quickstart section to reflect updated scripts and notification flow@README.md#49-117 @specs/002-cicd-hardening/quickstart.md#1-82
+- [ ] T038 [P] Add monitoring dashboard links for new metrics in `docs/deployment/observability.md`@specs/002-cicd-hardening/spec.md#87-103
+- [ ] T039 Conduct security review of GitHub environments and confirm `.env.example` parity@specs/002-cicd-hardening/spec.md#96-111
+- [ ] T040 [P] Run quickstart validation end-to-end and log results in `docs/deployment/release-checklist.md`@specs/002-cicd-hardening/quickstart.md#1-82
 
 ---
 
