@@ -121,7 +121,9 @@ jobs:
           key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
       - name: Install portal dependencies
-        run: npm install --prefix ${{ env.PORTAL_DIR }}
+        run: |
+          npm install
+          npm install --prefix ${{ env.PORTAL_DIR }}
 
       - name: Run ESLint
         run: |
@@ -188,7 +190,7 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            redocly diff artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+            redocly diff --language=en artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
