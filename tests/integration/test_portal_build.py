@@ -6,7 +6,9 @@ from pathlib import Path
 import pytest
 
 
-PORTAL_ROOT = Path(__file__).parents[3] / "src" / "apps" / "portal"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+PORTAL_ROOT = REPO_ROOT / "src" / "apps" / "portal"
 
 
 @pytest.mark.skipif(not PORTAL_ROOT.exists(), reason="Portal app is not initialized")

@@ -34,6 +34,7 @@ Non-negotiable rules:
 - Write failing tests before implementation with success and failure cases; maintain ≥70% coverage overall and 100% for auth, upload, and recognition modules.
 - Enforce Ruff for Python, ESLint for JS/TS, and repository Prettier hooks; reject dead/commented code and require typed signatures plus docstrings on public functions.
 - Python services must employ explicit static typing with Pydantic (or equivalent) models and annotated signatures; no implicit `Any` may remain after linting.
+- Every code change MUST include concise English comments capturing intent, invariants, and edge cases; reviewers reject submissions lacking explanatory comments.
 - All services emit structured logs `{ ts, opId, code, duration_ms }` and expose metrics that prove API P95 ≤ 3 s, offline upload success ≥ 99%, vision accuracy ≥ 90%, and rollback ≤ 10 min (validated via k6, Sentry, Grafana, or equivalent traces).
 - Deliverables ship with Docker Compose targets, health probes, `/reports/vision-bench.json`, and monitoring dashboards so regressions are observable.
 Rationale: Only measurable systems can uphold the KPI and SLA budgets promised to Thai logistics customers.

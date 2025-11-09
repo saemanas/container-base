@@ -2,8 +2,12 @@ openapi: 3.1.0
 info:
   title: Container Base MiniOps Health API
   version: 0.1.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+security: []
 servers:
-  - url: https://cb-api-stg.example.com
+  - url: https://api-stg.container-base.com
 paths:
   /healthz:
     get:
@@ -20,6 +24,16 @@ paths:
                   status:
                     type: string
                     example: ok
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: unavailable
   /readyz:
     get:
       summary: Readiness probe
@@ -35,3 +49,13 @@ paths:
                   status:
                     type: string
                     example: ok
+        '503':
+          description: Dependencies not ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: initializing

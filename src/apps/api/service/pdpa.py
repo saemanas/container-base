@@ -37,6 +37,7 @@ def _coerce_record(record: ConsentInput) -> ConsentRecord:
         return record
 
     try:
+        # Attempt to normalize loose mapping input (e.g. header dict) into the strict model.
         return ConsentRecord.model_validate(record)
     except ValidationError as exc:  # pragma: no cover - defensive
         raise ConsentMissingError("Consent record is malformed") from exc
@@ -50,6 +51,7 @@ def require_consent(record: ConsentInput | None) -> ConsentRecord:
 
     normalized = _coerce_record(record)
     if normalized.revoked_at is not None:
+        # Revoked consent is treated the same as missing consent for authorization.
         raise ConsentMissingError("Consent has been revoked")
 
     return normalized

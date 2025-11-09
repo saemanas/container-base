@@ -10,7 +10,7 @@ STAGES=(
   "Ruff::ruff --version"
   "ESLint::npm run lint --prefix ${ROOT_DIR}/src/apps/portal"
   "Pytest::python -m pytest tests/backend/test_ci_guardrails.py"
-  "Spectral::npx --yes spectral lint ${ROOT_DIR}/specs/001-lowcost-cicd-infra/contracts/openapi.yaml"
+  "OpenAPI Lint::npx --yes redocly lint ${ROOT_DIR}/specs/001-lowcost-cicd-infra/contracts/openapi.yaml"
   "Docker Build::docker build -q ${ROOT_DIR}/src/apps/api"
 )
 
@@ -37,10 +37,12 @@ run_stage() {
   binary=${cmd%% *}
 
   if [[ "${cmd}" == *"npx"* ]]; then
+    # Ensure we check for npx when the command includes scoped executables.
     binary="npx"
   fi
 
   if ! command -v "${binary}" >/dev/null 2>&1; then
+    # Capture missing tooling as a skipped stage rather than failing the script outright.
     log_json "measure-ci" "SKIP" "${label} skipped (command unavailable)" "\"${binary}\""
     STAGE_ROWS+=("| ${label} | skipped | - |")
     return 0
@@ -69,6 +71,7 @@ for stage in "${STAGES[@]}"; do
   IFS="::" read -r label command <<<"${stage}"
   run_stage "${label}" "${command}"
   if [[ "${STAGE_ROWS[-1]}" == *"failure"* ]]; then
+    # Stop the measurement run once a failure is encountered to avoid cascading errors.
     log_json "measure-ci" "INFO" "Halting after failure" "\"${label}\""
     break
   fi

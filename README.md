@@ -8,7 +8,8 @@ Container Base replaces manual container logging with automated recognition, GPS
 .
 ├── src/apps/api/               # FastAPI service
 ├── src/apps/ocr-worker/        # OCR background worker
-├── src/apps/portal/            # Next.js portal
+├── src/apps/portal/            # Next.js portal (Tailwind CSS + shadcn/ui)
+│   └── components/             # Shared UI building blocks (e.g., shadcn buttons)
 ├── src/apps/mobile/            # Expo mobile app
 ├── docs/deployment/            # Runbooks, guardrails, secrets, KPI mapping
 ├── scripts/                    # CI helpers, measurement utilities
@@ -37,11 +38,17 @@ Container Base replaces manual container logging with automated recognition, GPS
    npm install --prefix src/apps/portal
    npx expo install --cwd src/apps/mobile
    ```
-4. **Populate environment templates**
+4. **Run local validation before committing**
+   ```bash
+   ./scripts/run-all-checks.sh
+   ```
+   The script executes Ruff, Pytest, and ESLint to mirror CI checks.
+
+5. **Populate environment templates**
    - Fill in the placeholder values inside `src/apps/*/.env.example`.
    - Real secrets belong in GitHub Actions, Cloud Run, Supabase, Vercel, and Expo secret stores (see `docs/deployment/secrets-catalog.md`).
 
-5. **Run services locally**
+6. **Run services locally**
    ```bash
    export SUPABASE_URL=https://container-base-stg.supabase.co
    export SUPABASE_ANON_KEY=anon-key
@@ -57,7 +64,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 - Never commit directly to protected branches; always open a PR from your spec branch.
 
 ### CI / CD Pipeline
-- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → Spectral → Build → GHCR push.
+- GitHub Actions `ci.yml` runs Ruff → ESLint → Pytest → Spectral (Redocly CLI) → Build → GHCR push.
 - Deployment workflows (`deploy-api.yml`, `deploy-ocr.yml`, `deploy-portal.yml`) publish Cloud Run/Vercel artifacts. Staging auto deploys on `develop`; production requires manual approval and tag selection.
 - `scripts/validate-ci.sh` verifies mandatory files and secrets locally before running `act`.
 - `scripts/measure-ci.sh` can be executed to capture stage runtimes and append them to `docs/deployment/ci-pipeline.md` for trend analysis.

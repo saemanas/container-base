@@ -88,6 +88,8 @@ jobs:
     strategy:
       matrix:
         service: ["api", "ocr-worker"]
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -116,11 +118,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Spectral CLI
-        run: npm install --global @stoplight/spectral-cli
+      - name: Install Redocly CLI
+        run: npm install --global @redocly/cli
 
       - name: Lint OpenAPI contract
-        run: spectral lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml
+        run: redocly lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml
 
   build:
     runs-on: ubuntu-latest

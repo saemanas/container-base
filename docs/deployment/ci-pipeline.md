@@ -7,7 +7,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 1. **Ruff** – Python lint for API and OCR worker using matrix jobs
 2. **ESLint** – Portal lint with npm cache and Next.js build cache restore
 3. **Pytest** – Test suite execution (future placeholder) for services
-4. **Spectral** – OpenAPI contract lint
+4. **Spectral (Redocly CLI)** – OpenAPI contract lint
 5. **Build** – Docker image builds for API/OCR via Buildx
 6. **GHCR** – Build and push images to GitHub Container Registry (uses `GITHUB_TOKEN`)
 7. **Tag Deploy** – Summary/notification step to close the loop
@@ -25,6 +25,6 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ## Troubleshooting
 - **Ruff/ESLint failures**: Fix lint issues locally; re-run `ruff check` or `npm run lint`
 - **Pytest failures**: Ensure tests import correct modules; mimic pipeline environment with Python 3.12
-- **Spectral failures**: Validate OpenAPI contract structure; run `spectral lint` manually
+- **Spectral failures**: Validate OpenAPI contract structure; run `redocly lint` manually
 - **Docker build failures**: Confirm Dockerfile path and dependencies; leverage `docker build` locally
 - **GHCR push issues**: Ensure repository has GHCR permissions; personal access token may be required for forks

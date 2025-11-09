@@ -9,13 +9,9 @@ import pytest
 yaml = pytest.importorskip("yaml")
 
 
-OPENAPI_SPEC = (
-    Path(__file__).parents[3]
-    / "specs"
-    / "001-lowcost-cicd-infra"
-    / "contracts"
-    / "openapi.yaml"
-)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+OPENAPI_SPEC = REPO_ROOT / "specs" / "001-lowcost-cicd-infra" / "contracts" / "openapi.yaml"
 
 
 @pytest.fixture

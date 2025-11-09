@@ -12,6 +12,7 @@ This playbook supersedes prior drafts and folds in the `/refs/docs` canon that o
 - **Operational guides**: `development.md`, `deployment.md`, `.github/workflows/*`, `scripts/*`, `docs/patterns/*`, `contracts/*`.
 - **Spec-kit rule**: Before running `/specify`, `/clarify`, `/plan`, `/tasks`, `/analyze`, `/implement`, or writing code, ping the Context7 MCP endpoint. If reachable, pull the relevant doc section and cite it; if unavailable, log the outage, risks, and mitigation.
 - **Language & CLI policy**: Repository artifacts stay English-only (keys, comments, logs). Localization values may include Thai. Any command output shared by agents must be described in Korean.
+- **Comment discipline**: Every code submission MUST include concise English comments that explain intent, invariants, and edge cases. Contributions lacking explanatory comments are rejected during review.
 
 ---
 

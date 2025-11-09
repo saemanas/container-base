@@ -54,7 +54,7 @@ All AI reasoning and outputs must reflect the mindset and precision of these exp
 AI development is not mere code generation — it must produce **deployable, tested, and observable artifacts** that:
 
 - Run in **Docker Compose** locally.
-- Pass all **CI gates** (Ruff, ESLint, Pytest, Spectral).
+- Pass all **CI gates** (Ruff, ESLint, Pytest, OpenAPI lint via Redocly CLI).
 - Comply with **UX + PDPA policies**.
 - Operate using **only open-source and free infrastructure**.
 
@@ -156,8 +156,8 @@ All metrics must be validated using **open-source tools**.
 - Commits: Conventional Commit (type(scope): summary) ≤72 chars.
 - .githooks/pre-push: block --force and invalid commit messages.
 - **CI Pipeline Flow:**
-    
-    Ruff → ESLint → Pytest → Spectral → Build → GHCR Push → Tag Deploy
+
+    Ruff → ESLint → Pytest → OpenAPI lint (Redocly CLI) → Build → GHCR Push → Tag Deploy
     
 - **Release Control:**
     - Auto **Release Draft** after main merge.
@@ -191,7 +191,7 @@ Any omission of tests or run commands = **incomplete output**.
 | --- | --- |
 | ✅ Ruff lint | No warnings |
 | ✅ Tests | ≥70% coverage, all pass |
-| ✅ OpenAPI lint | 0 Spectral violations |
+| ✅ OpenAPI lint | 0 Redocly lint violations |
 | ✅ Logs | Include ts, opId, duration_ms |
 | ✅ Language | 100% English |
 | ✅ i18n | All strings externalized |
