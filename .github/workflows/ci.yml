@@ -124,7 +124,7 @@ jobs:
       - name: Install portal dependencies
         run: |
           npm install
-          npm install --prefix ${{ env.PORTAL_DIR }}
+          npm install --prefix ${{ env.PORTAL_DIR }} --include=dev
 
       - name: Run ESLint
         run: |
@@ -165,9 +165,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Redocly CLI
-        run: npm install --global @redocly/cli
-
       - name: Lint OpenAPI contract
         run: |
           set -o pipefail
@@ -191,7 +188,9 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            redocly diff artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+            npx --yes @redocly/openapi-cli@1.0.0-beta.116 diff \
+              artifacts/ci/openapi_lint/base-openapi.yaml \
+              "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
