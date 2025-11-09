@@ -200,18 +200,10 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            set +e
-            npx --yes @stoplight/spectral-cli@6.11.1 diff \
+            npx --yes openapi-diff@0.24.1 \
+              --fail-on-breaking \
               artifacts/ci/openapi_lint/base-openapi.yaml \
-              "$SPEC_PATH" \
-              --fail-severity error \
-              --format stylish 2>&1 | tee artifacts/ci/openapi_lint/diff.log
-            diff_status=$?
-            set -e
-            if [ "$diff_status" -gt 1 ]; then
-              echo "spectral diff encountered an error (status $diff_status)" >&2
-              exit "$diff_status"
-            fi
+              "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
