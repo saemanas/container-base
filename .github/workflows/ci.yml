@@ -190,7 +190,7 @@ jobs:
               echo "Base spec not found; skipping diff" >&2
               exit 0
             }
-            redocly diff --language=en artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+            redocly diff artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi

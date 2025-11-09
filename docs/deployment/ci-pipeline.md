@@ -43,6 +43,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 
 ## Common Operations
 - **Dry run locally**: `act pull_request -W .github/workflows/ci.yml`
+- **Component checks via helper script**: `bash scripts/run-act-ci.sh --follow -v` streams `act` logs for `python_checks`, `portal_checks`, and `openapi_checks`. Prepare `.env.act` with `GITHUB_TOKEN` and `PROJECT_TOKEN` (dummy values allowed) and ensure Docker is running. Apple silicon hosts automatically pass `--container-architecture linux/amd64`.
 - **Investigate failure**: Inspect the failing job log; re-run selected jobs from GitHub UI if inputs unchanged
 - **Upgrade dependencies**: Update `requirements.txt`, `package-lock.json`, re-run `npm install`, and adjust caches as needed
 - **Retrieve CI evidence**: Download `ci-summary-<run_id>` artifact to attach audit-ready logs during release reviews (retained for 90 days)

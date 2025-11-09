@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
-    "test": "next build --no-lint"
+    "test": "NEXT_DISABLE_ESLINT=1 next build"
   },
   "dependencies": {
     "next": "16.0.1",
