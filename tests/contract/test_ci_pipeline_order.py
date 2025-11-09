@@ -35,23 +35,35 @@ def test_ci_jobs_follow_expected_sequence() -> None:
     assert actual_order == EXPECTED_SEQUENCE, f"CI job order mismatch: {actual_order}"
 
 
-def test_ci_jobs_define_needs_chain() -> None:
-    """Each job after the first must depend on the previous job to enforce sequencing."""
+def test_ci_jobs_define_parallel_lint_and_sequenced_followups() -> None:
+    """Ruff/ESLint run independently; downstream jobs must depend on both lint stages."""
     jobs = _load_workflow()["jobs"]
 
-    previous_job: str | None = None
-    for job_name in EXPECTED_SEQUENCE:
-        assert job_name in jobs, f"Missing job {job_name} in ci.yml"
-        job_block = jobs[job_name]
-        assert isinstance(job_block, dict), f"Job block for {job_name} must be a mapping"
-        needs = job_block.get("needs")
-        if previous_job is None:
-            assert needs is None, "First job must not define needs"
-        else:
-            if isinstance(needs, list):
-                assert previous_job in needs, f"Job {job_name} must depend on {previous_job}"
-            elif isinstance(needs, str):
-                assert needs == previous_job, f"Job {job_name} must depend on {previous_job}"
-            else:
-                raise AssertionError(f"Job {job_name} missing needs dependency on {previous_job}")
-        previous_job = job_name
+    for lint_job in ["ruff", "eslint"]:
+        assert lint_job in jobs, f"Missing lint job {lint_job} in ci.yml"
+        job_block = jobs[lint_job]
+        assert isinstance(job_block, dict), f"Job block for {lint_job} must be a mapping"
+        assert job_block.get("needs") in (None, []), f"Lint job {lint_job} must not declare dependencies"
+
+    pytest_job = jobs.get("pytest")
+    assert isinstance(pytest_job, dict), "pytest job must be defined"
+    pytest_needs = pytest_job.get("needs")
+    assert pytest_needs is not None, "pytest job must depend on lint jobs"
+    if isinstance(pytest_needs, str):
+        pytest_needs = [pytest_needs]
+    assert set(pytest_needs) == {"ruff", "eslint"}, "pytest must depend on both lint jobs"
+
+    sequence_pairs = [
+        ("pytest", "openapi_lint"),
+        ("openapi_lint", "build"),
+        ("build", "ghcr"),
+        ("ghcr", "tag_deploy"),
+    ]
+    for upstream, downstream in sequence_pairs:
+        downstream_block = jobs.get(downstream)
+        assert isinstance(downstream_block, dict), f"Job {downstream} must exist"
+        needs = downstream_block.get("needs")
+        assert needs is not None, f"Job {downstream} must depend on {upstream}"
+        if isinstance(needs, str):
+            needs = [needs]
+        assert upstream in needs, f"Job {downstream} must depend on {upstream}"

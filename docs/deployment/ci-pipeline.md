@@ -3,14 +3,18 @@
 ## Overview
 The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy across all surfaces while staying within free-tier budgets.
 
+### Trigger policy
+- **Pull requests targeting protected branches (`main`, `develop`)** always execute the full CI pipeline before merge.
+- **Feature branch pushes** (any branch except `main`/`develop`) run CI automatically, providing feedback prior to opening a PR.
+- **Direct pushes to `main`/`develop`** rely on the resulting PR merge checks; the workflow ignores raw push events on these protected branches to prevent duplicate runs.
+
 ## Stages
-1. **Ruff** – Python lint for API and OCR worker using matrix jobs
-2. **ESLint** – Portal lint with npm cache and Next.js build cache restore
-3. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API
-4. **OpenAPI Lint (Redocly CLI)** – OpenAPI contract lint
-5. **Build** – Docker image builds for API/OCR via Buildx
-6. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
-7. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/tag_deploy/pipeline-summary.txt` with a 90-day retention window for compliance evidence
+1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Both jobs must succeed before downstream stages proceed.
+2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution.
+3. **OpenAPI Lint (Redocly CLI)** – OpenAPI contract lint
+4. **Build** – Docker image builds for API/OCR via Buildx
+5. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
+6. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/tag_deploy/pipeline-summary.txt` with a 90-day retention window for compliance evidence
 
 ### Rollback-aware Flow (US3)
 ```
