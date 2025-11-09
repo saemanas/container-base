@@ -25,11 +25,27 @@ def test_deploy_workflows_define_environments(workflow_path: Path) -> None:
     assert "deploy-production" in jobs, "Production job is required"
 
 
-@pytest.mark.xfail(reason="Workflow smoke simulation not yet implemented", strict=True)
 def test_deploy_workflows_require_manual_production_gate() -> None:
-    """Production deploy job must mention manual approval guard."""
+    """Production deploy job must document approval gate and environment guard."""
     api_workflow = yaml.safe_load(DEPLOY_API_WORKFLOW.read_text(encoding="utf-8"))
     production_job = api_workflow["jobs"]["deploy-production"]
+    environment = production_job.get("environment")
+
+    if isinstance(environment, dict):
+        env_name = environment.get("name", "")
+    else:
+        env_name = environment or ""
+
+    assert env_name.lower() == "production", "Production job must target production environment"
+
     steps = production_job.get("steps", [])
-    messages = "\n".join(str(step) for step in steps)
-    assert "approval" in messages.lower(), "Production job should document approval gate"
+
+    def contains_approval(step: object) -> bool:
+        if isinstance(step, dict):
+            inspect_values = [step.get("name", ""), step.get("run", ""), step.get("with", "")]
+            normalized = " ".join(str(value) for value in inspect_values)
+        else:
+            normalized = str(step)
+        return "approval" in normalized.lower()
+
+    assert any(contains_approval(step) for step in steps), "Production job should mention approval gate"
