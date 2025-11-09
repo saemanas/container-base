@@ -57,7 +57,7 @@ Rationale: Frontline operators adopt CB only when the experience is instant, res
 
 ### Automated CI/CD & Versioned Releases
 Non-negotiable rules:
-- Branch policy: `main` (production), `develop` (staging), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks.
+- Branch policy: `main` (production), `develop` (staging), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks. GitHub branch protection enforces linear history, strict status checks, admin enforcement, and ≥1 approving review on `main`/`develop`.
 - CI pipeline order is immutable: Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
 - Release Drafter creates notes on every `main` merge; semantic tags (vX.Y.Z) trigger production deploys via Cloud Run/Render/Fly, and rollback by redeploying the previous tag must finish ≤10 minutes.
 - OpenAPI schemas, `/billing/*` contracts, model manifests (`/models/<version>/model.yaml`), and shared DTOs in `contracts/` are the single source of truth; downstream code consumes generated clients only.
@@ -65,7 +65,7 @@ Rationale: Automation keeps the free-tier stack reliable, transparent, and ready
 
 ## MVP Stack & Operational Constraints
 
-- Mandated stack: Expo (React Native 0.76.3, React 18.3.1, TanStack Query 5, MMKV), Next.js 14.2.33 + shadcn/ui + TanStack Query 5 for the portal, FastAPI 0.121.0 + SQLModel 0.0.27 + Supabase 2.7.x for the API, YOLOv8n + PaddleOCR workers, GitHub + GHCR + Cloudflare + Cloud Run/Render/Fly for delivery.
+- Mandated stack: Expo (React Native 0.76.3, React 18.3.1, TanStack Query 5, MMKV), Next.js 16.0.1 + React 19.0.0 + shadcn/ui + TanStack Query 5 for the portal, FastAPI 0.121.0 + SQLModel 0.0.27 + Supabase 2.7.x for the API, YOLOv8n + PaddleOCR workers, GitHub + GHCR + Cloudflare + Cloud Run/Render/Fly for delivery.
 - Runtime baselines: Python 3.12.x, Node.js 22.21.1 LTS, Docker Engine ≥26 with Compose v2.29+, Biome 2.2.4, Playwright 1.56.1. Deviations require written approval inside the plan.md Complexity Tracking table.
 - Deployment artifacts must be runnable via Docker Compose, store environment configuration in GitHub environments, and describe secrets mapping per environment in deployment docs.
 - KPI/SLA budgets: FPRR ≥ 90%, backend P95 ≤ 3 s, offline upload success ≥ 99%, retention ≥ 60%, monthly active containers ≥ 1,000, rollback MTTR ≤ 10 min. Every feature spec maps its success criteria to at least one KPI.
@@ -90,4 +90,4 @@ Rationale: Automation keeps the free-tier stack reliable, transparent, and ready
 - Compliance reviews enforce PDPA, KPI, and CI/CD gates monthly. Non-compliance pauses deployments until corrective actions (tests, docs, alerts) are merged.
 - Context7 MCP availability must be verified before any `/specify` or related workflow runs; outages and risks are logged alongside specs to maintain traceability.
 
-**Version**: 1.0.0 | **Ratified**: 2025-11-08 | **Last Amended**: 2025-11-08
+**Version**: 1.0.0 | **Ratified**: 2025-11-08 | **Last Amended**: 2025-11-09

@@ -9,8 +9,8 @@ Stand up a monorepo skeleton and low-cost CI/CD topology so API, OCR worker, por
 
 ## Technical Context
 
-**Language/Version**: Python 3.12.x, Node.js 22.21.1 LTS, Expo SDK 54, React 18.3.1.@refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md#3-24  
-**Primary Dependencies**: FastAPI 0.121.0, SQLModel 0.0.27, Supabase client 2.23.x, Next.js 14.2.33, shadcn/ui, TanStack Query 5, GitHub Actions, Cloud Run, Vercel.@specs/001-lowcost-cicd-infra/spec.md#63-89  
+**Language/Version**: Python 3.12.x, Node.js 22.21.1 LTS, Expo SDK 54, React 19.0.0 (portal), React 18.3.1 (mobile).@refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md#3-31  
+**Primary Dependencies**: FastAPI 0.121.0, SQLModel 0.0.27, Supabase client 2.23.x, Next.js 16.0.1, React 19.0.0, shadcn/ui, TanStack Query 5, GitHub Actions, Cloud Run, Vercel.@specs/001-lowcost-cicd-infra/spec.md#63-89 @refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md#17-34  
 **Storage**: Supabase Postgres (single project with environment-specific tables/RLS).@specs/001-lowcost-cicd-infra/spec.md#65-117  
 **Testing**: Pytest for API/OCR, Vitest/Playwright placeholders for portal, Expo test runners; Ruff + ESLint lint gates.@specs/001-lowcost-cicd-infra/spec.md#10-88  
 **Target Platform**: Cloud Run (API/OCR), Vercel Hobby (portal), Expo-managed Android builds, Supabase hosted Postgres.@specs/001-lowcost-cicd-infra/spec.md#25-117  
@@ -30,7 +30,7 @@ Stand up a monorepo skeleton and low-cost CI/CD topology so API, OCR worker, por
 - **PDPA-Safe Data Stewardship**: Supabase RLS, GPS rounding, consent gating, secrets via GitHub environments with `.env.example` placeholders, retention automation tracked in guardrails.@specs/001-lowcost-cicd-infra/spec.md#63-103 @.specify/memory/constitution.md#40-46
 - **Instant, Resilient, Clear UX**: Ensure mobile/portal flows stay within 3 taps, maintain offline queue states, EN/TH i18n keys, and role-based visibility across admin surfaces.@specs/001-lowcost-cicd-infra/spec.md#99-104 @.specify/memory/constitution.md#48-55
 - **Automated CI/CD & Versioned Releases**: Uphold Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy order, enforce manual prod approvals, document rollback ≤10m, align contracts/models with single sources of truth.@specs/001-lowcost-cicd-infra/spec.md#63-118 @.specify/memory/constitution.md#56-63
-- **Stack & Infrastructure Alignment**: Target Python 3.12, Node 22.21.1, Expo 54, Next.js 14, Supabase, Cloud Run, Vercel, Cloudflare; monitor via Cloud Run logs, Vercel metrics, Supabase dashboards, optional Sentry/Grafana.@specs/001-lowcost-cicd-infra/spec.md#25-109 @.specify/memory/constitution.md#64-79
+- **Stack & Infrastructure Alignment**: Target Python 3.12, Node 22.21.1, Expo 54, Next.js 16, Supabase, Cloud Run, Vercel, Cloudflare; monitor via Cloud Run logs, Vercel metrics, Supabase dashboards, optional Sentry/Grafana.@specs/001-lowcost-cicd-infra/spec.md#25-109 @.specify/memory/constitution.md#64-79
 
 ## Project Structure
 

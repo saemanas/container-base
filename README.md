@@ -74,6 +74,12 @@ Container Base replaces manual container logging with automated recognition, GPS
 - `develop`: Staging branch (protected). Integrates validated spec branches before release.
 - `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `002-billing-api`). Branch from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
 
+**Protection rules (GitHub API snapshot, 2025-11-09)**  
+- Enforce admins + linear history enabled on both `main` and `develop`.
+- Strict status checks: merges require all configured CI jobs (Ruff → ESLint → Pytest → Redocly → Build → GHCR → Tag deploy) to finish green before landing.
+- Required pull-request reviews: ≥1 approving review; stale reviews are not auto-dismissed, so code owners must re-request when pushing updates.
+- Force pushes, branch deletions, and fork syncing are blocked to preserve audit trails. Use rollback tags instead of rewriting history.
+
 ### Deploy Checklist
 1. **Activate environment**
    ```bash

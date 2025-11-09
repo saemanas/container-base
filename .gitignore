@@ -40,4 +40,6 @@ Dockerfile.*~
 logs/
 *.sqlite3
 .codex/
-.windsurf/
+.windsurf/*
+!.windsurf/workflows/
+!.windsurf/workflows/**
