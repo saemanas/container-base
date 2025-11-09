@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PY_ENV="${ROOT_DIR}/.venv"
-ARTIFACT_DIR="${ROOT_DIR}/artifacts/ci"
+ARTIFACT_DIR="${RUN_ALL_CHECKS_ARTIFACT_DIR:-${ROOT_DIR}/artifacts/ci}"
 TIMESTAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
 SUMMARY_FILE="${ARTIFACT_DIR}/local-summary-${TIMESTAMP}.md"
 
@@ -30,6 +30,12 @@ cat >"${SUMMARY_FILE}" <<EOF
 | Stage | Status | Duration (ms) |
 | --- | --- | --- |
 EOF
+
+if [[ "${PDPA_FORCE_FAILURE:-0}" == "1" ]]; then
+  printf '| PDPA compliance gate | failure | 0 |\n' >>"${SUMMARY_FILE}"
+  log "PDPA compliance gate forced failure; summary saved to ${SUMMARY_FILE}."
+  exit 1
+fi
 
 run_step() {
   local label=$1

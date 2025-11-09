@@ -52,17 +52,17 @@
 
 ### Tests for User Story 1 (write first, ensure they fail initially)
 
-- [ ] T013 [P] [US1] Add CI pipeline contract test ensuring stage order in `tests/contract/test_ci_pipeline_order.py`@specs/002-cicd-hardening/spec.md#20-30
-- [ ] T014 [P] [US1] Add integration test simulating PDPA failure to ensure Pytest stage stops pipeline in `tests/integration/test_ci_pdpa_failure.py`@specs/002-cicd-hardening/spec.md#20-30
+- [x] T013 [P] [US1] Add CI pipeline contract test ensuring stage order in `tests/contract/test_ci_pipeline_order.py`@specs/002-cicd-hardening/spec.md#20-30
+- [x] T014 [P] [US1] Add integration test simulating PDPA failure to ensure Pytest stage stops pipeline in `tests/integration/test_ci_pdpa_failure.py`@specs/002-cicd-hardening/spec.md#20-30
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Update `.github/workflows/ci.yml` to enforce seven-stage sequence with explicit job dependencies@specs/002-cicd-hardening/spec.md#20-30 @specs/002-cicd-hardening/plan.md#6-20
-- [ ] T016 [P] [US1] Configure GitHub Actions artifact upload step after each CI stage to store structured logs under `artifacts/ci/<stage>`@specs/002-cicd-hardening/spec.md#12-30
-- [ ] T017 [P] [US1] Add PDPA consent regression suite execution in Pytest stage (`tests/backend/test_pdpa_compliance.py`) with fail-fast behavior@specs/002-cicd-hardening/spec.md#20-30 @README.md#83-87
-- [ ] T018 [US1] Implement CI guard to fail when portal dependencies deviate from Next.js16/React19 (package.json/version check)@specs/002-cicd-hardening/spec.md#74-85
-- [ ] T019 [US1] Document CI stage order, artifact retention, and PDPA evidence expectations in `docs/deployment/ci-pipeline.md`@specs/002-cicd-hardening/spec.md#20-30 @README.md#63-116
-- [ ] T020 [US1] Update `scripts/measure-ci.sh` to capture stage durations and upload digests mirroring `{ts, opId, code, duration_ms}` schema@README.md#63-116 @specs/002-cicd-hardening/spec.md#70-85
+- [x] T015 [P] [US1] Update `.github/workflows/ci.yml` to enforce seven-stage sequence with explicit job dependencies@specs/002-cicd-hardening/spec.md#20-30 @specs/002-cicd-hardening/plan.md#6-20
+- [x] T016 [P] [US1] Configure GitHub Actions artifact upload step after each CI stage to store structured logs under `artifacts/ci/<stage>`@specs/002-cicd-hardening/spec.md#12-30
+- [x] T017 [P] [US1] Add PDPA consent regression suite execution in Pytest stage (`tests/backend/test_pdpa_compliance.py`) with fail-fast behavior@specs/002-cicd-hardening/spec.md#20-30 @README.md#83-87
+- [x] T018 [US1] Implement CI guard to fail when portal dependencies deviate from Next.js16/React19 (package.json/version check)@specs/002-cicd-hardening/spec.md#74-85
+- [x] T019 [US1] Document CI stage order, artifact retention, and PDPA evidence expectations in `docs/deployment/ci-pipeline.md`@specs/002-cicd-hardening/spec.md#20-30 @README.md#63-116
+- [x] T020 [US1] Update `scripts/measure-ci.sh` to capture stage durations and upload digests mirroring `{ts, opId, code, duration_ms}` schema@README.md#63-116 @specs/002-cicd-hardening/spec.md#70-85
 
 **Checkpoint**: User Story 1 fully functional and testable independently
 
