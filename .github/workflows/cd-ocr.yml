@@ -1,4 +1,4 @@
-name: Deploy API
+name: CD-OCR
 
 on:
   push:
@@ -19,7 +19,7 @@ on:
         default: ""
 
 concurrency:
-  group: deploy-api-${{ github.ref }}
+  group: cd-ocr-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -43,14 +43,14 @@ jobs:
           echo "Authenticating to GCP (staging)..."
           # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
 
-      - name: Deploy to Cloud Run (staging)
+      - name: Deploy OCR worker to Cloud Run (staging)
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
-          SERVICE_NAME=cb-api
+          SERVICE_NAME=cb-ocr
           echo "Deploying $SERVICE_NAME to staging Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/api:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/ocr:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
 
       - name: Authenticate to GHCR
         env:
@@ -61,14 +61,14 @@ jobs:
       - name: Capture deployed image digest (staging)
         run: |
           mkdir -p artifacts/digests
-          docker pull ghcr.io/${{ github.repository }}/api:latest
-          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/api:latest > artifacts/digests/api.txt
+          docker pull ghcr.io/${{ github.repository }}/ocr:latest
+          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/ocr:latest > artifacts/digests/ocr.txt
 
       - name: Upload staging digest artifact
         uses: actions/upload-artifact@v4
         with:
-          name: api-staging-digest
-          path: artifacts/digests/api.txt
+          name: ocr-staging-digest
+          path: artifacts/digests/ocr.txt
           retention-days: 7
 
   deploy-production:
@@ -91,13 +91,6 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Download staging digest
-        uses: actions/download-artifact@v4
-        with:
-          name: api-staging-digest
-          path: artifacts/digests
-        continue-on-error: true
-
       - name: Authenticate to Google Cloud
         env:
           GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
@@ -105,41 +98,23 @@ jobs:
           echo "Authenticating to GCP (production)..."
           # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
 
-      - name: Resolve immutable image digest
-        id: digest
-        run: |
-          DIGEST_INPUT="${{ github.event.inputs.image_digest }}"
-          if [ -n "${DIGEST_INPUT}" ]; then
-            echo "digest=${DIGEST_INPUT}" >> "$GITHUB_OUTPUT"
-          elif [ -n "${ROLLBACK_TAG}" ]; then
-            echo "digest=${ROLLBACK_TAG}" >> "$GITHUB_OUTPUT"
-          elif [ -f artifacts/digests/api.txt ]; then
-            DIGEST=$(cat artifacts/digests/api.txt)
-            echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
-          else
-            echo "::error ::Provide image_digest input or ensure staging digest artifact exists."
-            exit 1
-          fi
-          echo "Resolved digest: $(cat artifacts/digests/api.txt 2>/dev/null || echo "${DIGEST_INPUT:-${ROLLBACK_TAG}}")"
-
-      - name: Deploy to Cloud Run (production)
+      - name: Deploy OCR worker to Cloud Run (production)
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
-          SERVICE_NAME=cb-api
-          IMAGE_DIGEST="${{ steps.digest.outputs.digest }}"
-          if [[ "${IMAGE_DIGEST}" == *"sha256:"* ]]; then
-            IMAGE_REF="ghcr.io/${{ github.repository }}/api@${IMAGE_DIGEST}"
-          else
-            IMAGE_REF="ghcr.io/${{ github.repository }}/api:${IMAGE_DIGEST}"
+          SERVICE_NAME=cb-ocr
+          IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:latest"
+          if [ -n "${ROLLBACK_TAG}" ]; then
+            IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:${ROLLBACK_TAG}"
+            echo "Rollback tag detected; preparing rollback to ${ROLLBACK_TAG}"
           fi
           echo "Deploying $SERVICE_NAME to production Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-prod --image ${IMAGE_REF} --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          echo "gcloud run deploy $SERVICE_NAME-prod --image ${IMAGE_TAG} --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
 
       - name: Emit structured rollback log
         env:
-          OP_ID: api-production-rollback
+          OP_ID: ocr-production-rollback
         run: |
           printf '{"ts":"%s","opId":"%s","code":"deploy","duration_ms":0,"message":"Rollback deployment completed"}\n' "$(date -u +%FT%TZ)" "$OP_ID"
 
@@ -149,27 +124,8 @@ jobs:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           RETENTION_TAG: ${{ github.event.inputs.rollback_tag }}
         run: |
-          bash scripts/run-retention-job.sh --environment production --tag "${RETENTION_TAG:-latest}" --op-id api-production-rollback
+          bash scripts/run-retention-job.sh --environment production --tag "${RETENTION_TAG:-latest}" --op-id ocr-production-rollback
 
       - name: Post-deploy verification reminder
         run: |
           echo "Verify /healthz and /readyz endpoints after production rollout."
-
-      - name: Purge Cloudflare cache and verify DNS propagation
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          TARGET_DOMAIN: api.container-base.com
-        run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ZONE_ID" ]; then
-            echo "::warning ::Cloudflare credentials not configured; skipping propagation check. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID secrets to enable."
-            exit 0
-          fi
-          echo "Purging Cloudflare cache for $TARGET_DOMAIN"
-          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}'
-          echo "Waiting for DNS propagation"
-          sleep 5
-          dig +short "$TARGET_DOMAIN"

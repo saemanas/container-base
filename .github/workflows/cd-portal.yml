@@ -1,4 +1,4 @@
-name: Deploy Portal
+name: CD-Portal
 
 on:
   push:
@@ -20,7 +20,7 @@ on:
         default: ""
 
 concurrency:
-  group: deploy-portal-${{ github.ref }}
+  group: cd-portal-${{ github.ref }}
   cancel-in-progress: false
 
 env:

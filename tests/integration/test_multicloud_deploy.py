@@ -8,8 +8,8 @@ import pytest
 yaml = pytest.importorskip("yaml")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEPLOY_API_WORKFLOW = REPO_ROOT / ".github/workflows/deploy-api.yml"
-DEPLOY_OCR_WORKFLOW = REPO_ROOT / ".github/workflows/deploy-ocr.yml"
+DEPLOY_API_WORKFLOW = REPO_ROOT / ".github/workflows/cd-api.yml"
+DEPLOY_OCR_WORKFLOW = REPO_ROOT / ".github/workflows/cd-ocr.yml"
 
 
 @pytest.mark.parametrize(

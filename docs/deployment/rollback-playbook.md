@@ -4,7 +4,7 @@ This playbook documents how to revert Container Base services within the mandate
 
 ## Preconditions
 - GHCR images are tagged with semantic versions (`vX.Y.Z`) during successful deploys.
-- GitHub Actions deploy workflows (`deploy-api.yml`, `deploy-ocr.yml`) accept manual inputs for rollback tags.
+- GitHub Actions CD workflows (`cd-api.yml`, `cd-ocr.yml`) accept manual inputs for rollback tags.
 - Cloud Run services are named `cb-api-stg`, `cb-api-prod`, `cb-ocr-stg`, `cb-ocr-prod`.
 
 ## Rollback Steps
@@ -22,16 +22,16 @@ This playbook documents how to revert Container Base services within the mandate
    - Retrieve the digests captured by staging deploys (stored under `artifacts/digests/*.txt` by the CI workflows) to ensure production rollbacks use immutable references.
 
 3. **Trigger Rollback Workflow**
-   - API: `gh workflow run deploy-api.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
-   - OCR: `gh workflow run deploy-ocr.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
-   - Portal: `gh workflow run deploy-portal.yml --ref main --field environment=production --field backend_ready_url=<readyz-url>` or use `vercel rollback <deployment-id>` if necessary.
+   - API: `gh workflow run cd-api.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
+   - OCR: `gh workflow run cd-ocr.yml --ref main --field environment=production --field rollback_tag=v1.2.3`
+   - Portal: `gh workflow run cd-portal.yml --ref main --field environment=production --field backend_ready_url=<readyz-url>` or use `vercel rollback <deployment-id>` if necessary.
    - Ensure Supabase migrations are not re-run; consult `scripts/promote-supabase.sh` metadata JSON in `artifacts/supabase/` to confirm most recent RLS smoke-test evidence.
 
 4. **Verify Health**
    - `curl https://api.container-base.com/healthz`
    - `curl https://ocr.container-base.com/healthz`
    - `curl https://portal.container-base.com` (ensure expected version banner).
-   - Confirm Cloudflare propagation by running `dig +short api.container-base.com` and `dig +short portal.container-base.com`; if stale, invoke the Cloudflare purge step manually as described in `deploy-api.yml`.
+   - Confirm Cloudflare propagation by running `dig +short api.container-base.com` and `dig +short portal.container-base.com`; if stale, invoke the Cloudflare purge step manually as described in `cd-api.yml`.
 
 5. **Communicate Status**
    - Post incident update in Platform channel with timelines and remaining risks.
