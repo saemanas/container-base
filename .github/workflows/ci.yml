@@ -14,118 +14,8 @@ env:
   ARTIFACT_RETENTION_DAYS: "90"
 
 jobs:
-  ruff:
+  python_checks:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: ["api", "ocr-worker"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Cache pip wheels
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
-
-      - name: Install Ruff
-        run: python -m pip install --upgrade pip ruff
-
-      - name: Run Ruff against ${{ matrix.service }}
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/ci/ruff
-          ruff check src/apps/${{ matrix.service }} 2>&1 | tee artifacts/ci/ruff/${{ matrix.service }}.log
-
-      - name: Upload Ruff artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-ruff-${{ matrix.service }}-${{ github.run_id }}
-          path: artifacts/ci/ruff/${{ matrix.service }}.log
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-  eslint:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: ["portal"]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Restore Next.js build cache
-        if: ${{ matrix.app == 'portal' }}
-        uses: actions/cache@v4
-        with:
-          path: src/apps/${{ matrix.app }}/.next/cache
-          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies (if package.json present)
-        run: |
-          if [ -f "src/apps/${{ matrix.app }}/package.json" ]; then
-            cd src/apps/${{ matrix.app }}
-            npm install
-          else
-            echo "No package.json in src/apps/${{ matrix.app }}; skipping install"
-          fi
-
-      - name: Run ESLint (if package.json present)
-        run: |
-          set -o pipefail
-          artifact_dir="artifacts/ci/eslint"
-          mkdir -p "${artifact_dir}"
-          artifact_file="${artifact_dir}/${{ matrix.app }}.log"
-          if [ -f "src/apps/${{ matrix.app }}/package.json" ]; then
-            cd src/apps/${{ matrix.app }}
-            npm run lint -- --max-warnings=0 2>&1 | tee "../../../${artifact_file}"
-          else
-            echo "No package.json in src/apps/${{ matrix.app }}; skipping lint" | tee "${artifact_file}"
-          fi
-
-      - name: Upload ESLint artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-eslint-${{ matrix.app }}-${{ github.run_id }}
-          path: artifacts/ci/eslint/${{ matrix.app }}.log
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Verify portal stack baseline
-        run: python3 scripts/check-portal-stack.py
-
-      - name: Prime portal build cache (if package.json present)
-        run: |
-          if [ -f "src/apps/${{ matrix.app }}/package.json" ]; then
-            cd src/apps/${{ matrix.app }}
-            npm run build --if-present || echo "No build script defined"
-          else
-            echo "No package.json in src/apps/${{ matrix.app }}; skipping build cache prime"
-          fi
-
-  pytest:
-    runs-on: ubuntu-latest
-    needs:
-      - ruff
-      - eslint
-    strategy:
-      matrix:
-        service: ["api", "ocr-worker"]
     env:
       PYTHONPATH: ${{ github.workspace }}
     steps:
@@ -145,49 +35,132 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
 
-      - name: Install dependencies
+      - name: Install Python tooling
         run: |
-          python -m pip install --upgrade pip pytest
-          if [ -f "src/apps/${{ matrix.service }}/requirements.txt" ]; then
-            python -m pip install -r src/apps/${{ matrix.service }}/requirements.txt
-          fi
-          pip install -r tests/requirements.txt 2>/dev/null || true
+          python -m pip install --upgrade pip
+          python -m pip install ruff pytest
+
+      - name: Install service dependencies
+        run: |
+          set -euo pipefail
+          for service in api ocr-worker; do
+            req="src/apps/${service}/requirements.txt"
+            if [ -f "$req" ]; then
+              python -m pip install -r "$req"
+            fi
+          done
+          python -m pip install -r tests/requirements.txt 2>/dev/null || true
+
+      - name: Run Ruff checks
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/ci/ruff
+          for service in api ocr-worker; do
+            log="artifacts/ci/ruff/${service}.log"
+            ruff check "src/apps/${service}" 2>&1 | tee "$log"
+          done
+
+      - name: Upload Ruff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-ruff-${{ github.run_id }}
+          path: artifacts/ci/ruff
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
       - name: Run PDPA consent regression suite
-        if: ${{ matrix.service == 'api' }}
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/pdpa
-          pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pdpa/${{ matrix.service }}.log
+          pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pdpa/api.log
 
       - name: Upload PDPA artifacts
-        if: ${{ always() && matrix.service == 'api' }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ci-pdpa-${{ github.run_id }}
-          path: artifacts/ci/pdpa/${{ matrix.service }}.log
+          path: artifacts/ci/pdpa/api.log
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-      - name: Run pytest for ${{ matrix.service }}
+      - name: Run Python test suites
         run: |
-          set -o pipefail
+          set -euo pipefail
           mkdir -p artifacts/ci/pytest
-          pytest tests --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pytest/${{ matrix.service }}.log
+          for service in api ocr-worker; do
+            log="artifacts/ci/pytest/${service}.log"
+            pytest tests --maxfail=1 --disable-warnings -q 2>&1 | tee "$log"
+          done
 
       - name: Upload Pytest artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ci-pytest-${{ matrix.service }}-${{ github.run_id }}
-          path: artifacts/ci/pytest/${{ matrix.service }}.log
+          name: ci-pytest-${{ github.run_id }}
+          path: artifacts/ci/pytest
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  openapi_lint:
+  portal_checks:
     runs-on: ubuntu-latest
-    needs: pytest
+    env:
+      PORTAL_DIR: src/apps/portal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PORTAL_DIR }}/.next/cache
+          key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
+
+      - name: Install portal dependencies
+        run: npm install --prefix ${{ env.PORTAL_DIR }}
+
+      - name: Run ESLint
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/ci/eslint
+          npm run lint --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/eslint/portal.log
+
+      - name: Upload ESLint artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-eslint-portal-${{ github.run_id }}
+          path: artifacts/ci/eslint/portal.log
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+      - name: Verify portal stack baseline
+        run: python3 scripts/check-portal-stack.py
+
+      - name: Run portal tests
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/ci/portal_tests
+          npm run test --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/portal_tests/portal.log
+
+      - name: Upload portal test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-portal-tests-${{ github.run_id }}
+          path: artifacts/ci/portal_tests/portal.log
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+
+  openapi_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Redocly CLI
         run: npm install --global @redocly/cli
@@ -198,17 +171,44 @@ jobs:
           mkdir -p artifacts/ci/openapi_lint
           redocly lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
 
-      - name: Upload OpenAPI lint artifacts
+      - name: Diff OpenAPI contract against base
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/ci/openapi_lint
+          SPEC_PATH="specs/001-lowcost-cicd-infra/contracts/openapi.yaml"
+          BASE_REF=""
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BASE_REF="${{ github.sha }}^"
+          fi
+
+          if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+            git show "$BASE_REF:$SPEC_PATH" > artifacts/ci/openapi_lint/base-openapi.yaml || {
+              echo "Base spec not found; skipping diff" >&2
+              exit 0
+            }
+            redocly diff artifacts/ci/openapi_lint/base-openapi.yaml "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+          else
+            echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
+          fi
+
+      - name: Upload OpenAPI artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ci-openapi-${{ github.run_id }}
-          path: artifacts/ci/openapi_lint/lint.log
+          path: |
+            artifacts/ci/openapi_lint/lint.log
+            artifacts/ci/openapi_lint/diff.log
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   build:
     runs-on: ubuntu-latest
-    needs: openapi_lint
+    needs:
+      - python_checks
+      - portal_checks
+      - openapi_checks
     strategy:
       matrix:
         service:

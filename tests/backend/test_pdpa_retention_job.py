@@ -9,8 +9,8 @@ yaml = pytest.importorskip("yaml")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = [
-    REPO_ROOT / ".github/workflows/deploy-api.yml",
-    REPO_ROOT / ".github/workflows/deploy-ocr.yml",
+    REPO_ROOT / ".github/workflows/cd-api.yml",
+    REPO_ROOT / ".github/workflows/cd-ocr.yml",
 ]
 
 EXPECTED_STEP_NAME = "Run PDPA retention job"

@@ -18,7 +18,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 ## Stages
 1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Both jobs must succeed before downstream stages proceed.
 2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution.
-3. **OpenAPI Lint (Redocly CLI)** – OpenAPI contract lint
+3. **OpenAPI Lint & Diff (Redocly CLI)** – Lint the contract and compare against the base branch using `redocly diff` to detect breaking changes before merge.
 4. **Build** – Docker image builds for API/OCR via Buildx
 5. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
 6. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/tag_deploy/pipeline-summary.txt` with a 90-day retention window for compliance evidence

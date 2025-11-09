@@ -9,10 +9,9 @@ import yaml
 
 CI_WORKFLOW_PATH = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
 EXPECTED_SEQUENCE = [
-    "ruff",
-    "eslint",
-    "pytest",
-    "openapi_lint",
+    "python_checks",
+    "portal_checks",
+    "openapi_checks",
     "build",
     "ghcr",
     "tag_deploy",
@@ -35,27 +34,26 @@ def test_ci_jobs_follow_expected_sequence() -> None:
     assert actual_order == EXPECTED_SEQUENCE, f"CI job order mismatch: {actual_order}"
 
 
-def test_ci_jobs_define_parallel_lint_and_sequenced_followups() -> None:
-    """Ruff/ESLint run independently; downstream jobs must depend on both lint stages."""
+def test_ci_jobs_define_parallel_component_checks() -> None:
+    """Component check jobs must run independently and gate downstream stages."""
     jobs = _load_workflow()["jobs"]
 
-    for lint_job in ["ruff", "eslint"]:
-        assert lint_job in jobs, f"Missing lint job {lint_job} in ci.yml"
-        job_block = jobs[lint_job]
-        assert isinstance(job_block, dict), f"Job block for {lint_job} must be a mapping"
-        assert job_block.get("needs") in (None, []), f"Lint job {lint_job} must not declare dependencies"
+    check_jobs = ["python_checks", "portal_checks", "openapi_checks"]
+    for job_name in check_jobs:
+        assert job_name in jobs, f"Missing component job {job_name} in ci.yml"
+        job_block = jobs[job_name]
+        assert isinstance(job_block, dict), f"Job block for {job_name} must be a mapping"
+        assert job_block.get("needs") in (None, []), f"Component job {job_name} must not declare dependencies"
 
-    pytest_job = jobs.get("pytest")
-    assert isinstance(pytest_job, dict), "pytest job must be defined"
-    pytest_needs = pytest_job.get("needs")
-    assert pytest_needs is not None, "pytest job must depend on lint jobs"
-    if isinstance(pytest_needs, str):
-        pytest_needs = [pytest_needs]
-    assert set(pytest_needs) == {"ruff", "eslint"}, "pytest must depend on both lint jobs"
+    build_job = jobs.get("build")
+    assert isinstance(build_job, dict), "build job must be defined"
+    build_needs = build_job.get("needs")
+    assert build_needs is not None, "build job must depend on component checks"
+    if isinstance(build_needs, str):
+        build_needs = [build_needs]
+    assert set(build_needs) == set(check_jobs), "build must depend on all component jobs"
 
     sequence_pairs = [
-        ("pytest", "openapi_lint"),
-        ("openapi_lint", "build"),
         ("build", "ghcr"),
         ("ghcr", "tag_deploy"),
     ]
