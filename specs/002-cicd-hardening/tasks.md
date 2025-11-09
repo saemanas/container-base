@@ -35,9 +35,9 @@
 - [x] T006 [P] Document operations email distribution and notification template in `docs/deployment/ci-cd-notifications.md`@specs/002-cicd-hardening/spec.md#12-85 @specs/002-cicd-hardening/research.md#17-36
 - [x] T007 Update `.github/workflows/deploy-*.yml` inputs to accept `rollback_tag` and environment parameters consistently@specs/002-cicd-hardening/spec.md#33-86 @README.md#87-112
 - [x] T008 Ensure Supabase migrations directory contains staging + production promotion notes (`docs/deployment/supabase-schema.md`)@specs/002-cicd-hardening/spec.md#72-85 @specs/002-cicd-hardening/research.md#6-17
-- [ ] T009 Harden secrets mapping in `.env.example` across API, OCR worker, portal, ensuring placeholders for new tokens@specs/002-cicd-hardening/spec.md#96-111 @README.md#54-122
-- [ ] T010 [P] Extend `scripts/run-all-checks.sh` to surface GitHub artifact upload step locally@README.md#49-63 @specs/002-cicd-hardening/spec.md#70-85
-- [ ] T011 [P] Capture baseline metrics (API P95, OCR success) before changes, store in `docs/deployment/ci-baselines.md`@specs/002-cicd-hardening/spec.md#87-103 @README.md#63-116
+- [x] T009 Harden secrets mapping in `.env.example` across API, OCR worker, portal, ensuring placeholders for new tokens@specs/002-cicd-hardening/spec.md#96-111 @README.md#54-122
+- [x] T010 [P] Extend `scripts/run-all-checks.sh` to surface GitHub artifact upload step locally@README.md#49-63 @specs/002-cicd-hardening/spec.md#70-85
+- [x] T011 [P] Capture baseline metrics (API P95, OCR success) before changes, store in `docs/deployment/ci-baselines.md`@specs/002-cicd-hardening/spec.md#87-103 @README.md#63-116
 - [x] T012 Update `.github/workflows/deploy-*.yml` to enforce GitHub Environment manual approval gates before production deploys@specs/002-cicd-hardening/spec.md#74-85 @specs/002-cicd-hardening/plan.md#6-28
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel

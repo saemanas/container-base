@@ -21,7 +21,7 @@
    ```bash
    ./scripts/run-all-checks.sh
    ```
-   This executes Ruff → ESLint → Pytest → OpenAPI Lint, matching FR-001 ordering before container builds and GHCR pushes.@README.md#49-61 @specs/002-cicd-hardening/spec.md#20-85
+   This executes Ruff → ESLint → Pytest, matching FR-001 ordering before container builds and GHCR pushes, and writes a local evidence summary to `artifacts/ci/local-summary-<timestamp>.md` for compliance notebooks.@README.md#49-61 @specs/002-cicd-hardening/spec.md#20-85
 4. Generate CI evidence artifacts locally when needed:
    ```bash
    ./scripts/measure-ci.sh && ./scripts/validate-ci.sh
