@@ -9,6 +9,7 @@ env:
   PYTHON_VERSION: "3.12"
   NODE_VERSION: "22.21.1"
   GHCR_IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  ARTIFACT_RETENTION_DAYS: "90"
 
 jobs:
   ruff:
@@ -181,4 +182,17 @@ jobs:
     steps:
       - name: Summarize pipeline completion
         run: |
-          echo "CI pipeline completed Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy"
+          mkdir -p artifacts/ci
+          {
+            echo "CI pipeline completed Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR → Tag Deploy"
+            echo "Run ID: ${{ github.run_id }}"
+            echo "Commit: ${{ github.sha }}"
+            echo "Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          } > artifacts/ci/pipeline-summary.txt
+
+      - name: Upload CI pipeline evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-summary-${{ github.run_id }}
+          path: artifacts/ci
+          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}

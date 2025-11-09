@@ -29,16 +29,21 @@
    Archive produced logs under `.artifacts/` to emulate GitHub Actions retention for audits.@README.md#63-116 @specs/002-cicd-hardening/spec.md#12-85
 
 ## Supabase Migration Rehearsal
-1. Export the latest staging schema migrations and apply in a local sandbox:
+1. Run the scripted Supabase smoke test (wraps pull → push → RLS test) to capture evidence locally:
+   ```bash
+   SUPABASE_STAGING_REF=<staging-ref> ./scripts/supabase-smoke-test.sh
+   ```@specs/002-cicd-hardening/spec.md#72-85 @specs/002-cicd-hardening/tasks.md#33-41
+   This script stores logs under `artifacts/supabase/` for later upload to GitHub artifacts.
+2. Export the latest staging schema migrations and apply in a local sandbox when manual inspection is needed:
    ```bash
    supabase db pull --project-ref <staging-ref>
    supabase db push --project-ref <local-ref>
    ```
-2. Execute Supabase CLI RLS smoke tests:
+3. Execute Supabase CLI RLS smoke tests (if running manually outside the script):
    ```bash
    supabase db test --project-ref <staging-ref> --tests supabase/tests/rls
    ```@specs/002-cicd-hardening/spec.md#72-85
-3. Once tests pass, commit migration scripts to the repo and prepare GitHub environment approvals referencing the captured logs.
+4. Once tests pass, commit migration scripts to the repo and prepare GitHub environment approvals referencing the captured logs.
 
 ## Deployment Dry Run
 1. Use Docker Compose to build API and OCR worker containers with GHCR tags:

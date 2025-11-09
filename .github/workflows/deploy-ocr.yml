@@ -13,6 +13,10 @@ on:
         options:
           - staging
           - production
+      rollback_tag:
+        description: "Optional rollback tag to redeploy"
+        required: false
+        default: ""
 
 concurrency:
   group: deploy-ocr-${{ github.ref }}
@@ -20,9 +24,11 @@ concurrency:
 
 jobs:
   deploy-staging:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     runs-on: ubuntu-latest
     environment: staging
+    env:
+      ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
     steps:
       - uses: actions/checkout@v4
 
@@ -46,10 +52,19 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     runs-on: ubuntu-latest
     needs: []
-    environment:
-      name: production
-      url: https://cb-ocr-prod.example.com
+    environment: production
+    env:
+      ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
     steps:
+      - name: Confirm manual approval
+        run: |
+          echo "Production deployment is gated by the GitHub environment approval queue."
+          if [ -n "${ROLLBACK_TAG}" ]; then
+            echo "Rollback tag specified: ${ROLLBACK_TAG}"
+          else
+            echo "No rollback tag provided; deploying latest image."
+          fi
+
       - uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
@@ -65,8 +80,13 @@ jobs:
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
           SERVICE_NAME=cb-ocr
+          IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:latest"
+          if [ -n "${ROLLBACK_TAG}" ]; then
+            IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:${ROLLBACK_TAG}"
+            echo "Rollback tag detected; preparing rollback to ${ROLLBACK_TAG}"
+          fi
           echo "Deploying $SERVICE_NAME to production Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-prod --image ghcr.io/${{ github.repository }}/ocr:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          echo "gcloud run deploy $SERVICE_NAME-prod --image ${IMAGE_TAG} --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
 
       - name: Post-deploy verification reminder
         run: |

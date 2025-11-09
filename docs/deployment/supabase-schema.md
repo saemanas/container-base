@@ -42,6 +42,10 @@ Schema mirrors `app_stg` with identical table definitions, policies, and indexes
 - Track schema changes via SQL files in `supabase/migrations/`
 - Use Supabase CLI for applying changes locally; CI should validate migrations with `supabase db diff`
 - Document any RLS or consent table changes in `docs/deployment/pdpa-playbook.md` to keep legal traceability
+- Staging-first rehearsal:
+  - Run `SUPABASE_STAGING_REF=<ref> ./scripts/supabase-smoke-test.sh` to capture pull → push → RLS results
+  - Store generated logs under `artifacts/supabase/` and upload to GitHub Actions artifacts for ≥90 day retention
+  - Record promotion approvals and rollback readiness in `docs/deployment/rollback-playbook.md`
 
 ## Maintenance
 - Run quarterly review to ensure staging/production parity

@@ -10,7 +10,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 4. **OpenAPI Lint (Redocly CLI)** – OpenAPI contract lint
 5. **Build** – Docker image builds for API/OCR via Buildx
 6. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
-7. **Tag Deploy** – Summary/notification step to close the loop
+7. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/pipeline-summary.txt` with a 90-day retention window for compliance evidence
 
 ## Required Secrets (GitHub Actions)
 - `PROJECT_TOKEN` – GitHub PAT with `write:packages`, stored in repo secrets for GHCR pushes
@@ -21,6 +21,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 - **Dry run locally**: `act pull_request -W .github/workflows/ci.yml`
 - **Investigate failure**: Inspect the failing job log; re-run selected jobs from GitHub UI if inputs unchanged
 - **Upgrade dependencies**: Update `requirements.txt`, `package-lock.json`, re-run `npm install`, and adjust caches as needed
+- **Retrieve CI evidence**: Download `ci-summary-<run_id>` artifact to attach audit-ready logs during release reviews (retained for 90 days)
 
 ## Troubleshooting
 - **Ruff/ESLint failures**: Fix lint issues locally; re-run `ruff check` or `npm run lint`
