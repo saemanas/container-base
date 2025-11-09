@@ -123,8 +123,9 @@ jobs:
 
       - name: Install portal dependencies
         run: |
-          npm install --include=dev
-          npm install --workspace ${{ env.PORTAL_DIR }} --include=dev
+          npm install --workspaces --include=dev
+          npm install --prefix ${{ env.PORTAL_DIR }} --include=dev
+          test -f ${{ env.PORTAL_DIR }}/node_modules/tailwindcss/lib/css/preflight.css
 
       - name: Run ESLint
         run: |
