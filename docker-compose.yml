@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./src/apps/api
+    command: bash -c "pip install --no-cache-dir -r requirements.txt && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    env_file:
+      - ./src/apps/api/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src/apps/api:/app
+    networks:
+      - dev
+
+  ocr:
+    build:
+      context: ./src/apps/ocr
+    command: bash -c "pip install --no-cache-dir -r requirements.txt && python -m app.main"
+    env_file:
+      - ./src/apps/ocr/.env
+    volumes:
+      - ./src/apps/ocr:/worker
+    depends_on:
+      - api
+    networks:
+      - dev
+
+  portal:
+    image: node:22-alpine
+    working_dir: /workspace
+    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0 --port 3000"
+    env_file:
+      - ./src/apps/portal/.env
+    environment:
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - ./src/apps/portal:/workspace
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    networks:
+      - dev
+
+networks:
+  dev:
+    driver: bridge

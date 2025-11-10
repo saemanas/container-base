@@ -25,8 +25,8 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 
 ### Rollback-aware Flow (US3)
 ```
-┌────────┐    ┌────────┐    ┌────────┐    ┌─────────────┐
-│  CI PR │ -> │ Staging│ -> │ Prod   │ -> │ Rollback (≤10m)
+┌────────┐    ┌─────┐    ┌────┐    ┌─────────────┐
+│  CI PR │ -> │ Stg │ -> │Prod│ -> │ Rollback (≤10m)
 └────────┘    └────────┘    └────────┘    └─────────────┘
      |              |              |            |
      |              |              |            └─▶ `scripts/run-retention-job.sh`
@@ -34,7 +34,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
      |              └─▶ GHCR digest capture
      └─▶ Tag summary artifact (`artifacts/ci/tag_deploy/`)
 ```
-*Diagram describes the mandated promotion path: CI evidence → staging deploy → production deploy with manual approval → automated rollback drill capturing Supabase retention logs and notification emails.*
+*Diagram describes the mandated promotion path: CI evidence → stg deploy → prod deploy with manual approval → automated rollback drill capturing Supabase retention logs and notification emails.*
 
 ## Required Secrets (GitHub Actions)
 - `PROJECT_TOKEN` – GitHub PAT with `write:packages`, stored in repo secrets for GHCR pushes
@@ -53,6 +53,13 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 - **Notification archive**: Production deploys and rollbacks call `scripts/send-ci-email.py` which emits `.eml` artifacts in `artifacts/notifications/` and structured logs `{ts, opId, code, duration_ms}` for auditing.
 - **Quota evidence**: Execute `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-<env>` post-release to record Supabase/Cloud Run/Vercel usage snapshots alongside CI artifacts.
 
+### Stg Deployment Verification
+- **Digest capture**: After `cd-api`/`cd-ocr` stg runs, download `artifacts/digests/*.txt` to confirm immutable GHCR references exist before prod promotion.
+- **Cloud Run health**: Run `scripts/measure-latency.py --url https://api-stg.container-base.com/readyz --op-id readyz-api-stg` (repeat for OCR) and attach logs to the release checklist.
+- **Supabase smoke tests**: Execute `SUPABASE_STG_REF=container-base-stg bash scripts/supabase-smoke-test.sh`; store the resulting log in `artifacts/supabase/` and cross-reference PDPA consent enforcement (`refs/docs/CB-Service-Plan-v1.0.0-en-US.md §11`).
+- **Portal readiness**: Validate that the Vercel preview uses `NEXT_PUBLIC_API_BASE_URL=https://api-stg.container-base.com` and renders EN/TH deploy status assets. Capture screenshots or logs under `artifacts/portal/`.
+- **Cloudflare propagation**: `dig +short api-stg.container-base.com` and `portal-stg.container-base.com`; if stale, trigger the stg purge step using stg-scoped tokens outlined in `docs/deployment/secrets-catalog.md`.
+
 ### Script Reference
 | Script | Purpose | Primary doc |
 | --- | --- | --- |
@@ -64,7 +71,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 | `scripts/check-free-tier.py` | Track free-tier quota consumption and append observability notes. | `docs/deployment/observability.md` |
 | `scripts/measure-latency.py` | Probe HTTP latency for readyz endpoints and log KPI evidence. | `docs/deployment/cost-guardrails.md` |
 | `scripts/run-retention-job.sh` | Execute PDPA retention drill against Supabase with structured logs. | `docs/deployment/observability.md` & `docs/deployment/release-checklist.md` |
-| `scripts/promote-supabase.sh` | Push Supabase migrations staging→production with RLS smoke tests. | `docs/deployment/rollback-playbook.md` |
+| `scripts/promote-supabase.sh` | Push Supabase migrations stg→prod with RLS smoke tests. | `docs/deployment/rollback-playbook.md` |
 | `scripts/supabase-smoke-test.sh` | Validate Supabase schema and retention policies post-deploy. | `docs/deployment/supabase-schema.md` |
 | `scripts/send-ci-email.py` | Emit structured email notifications for CI/CD events. | `docs/deployment/ci-cd-notifications.md` |
 

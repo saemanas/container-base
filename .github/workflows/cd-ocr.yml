@@ -8,18 +8,22 @@ on:
       environment:
         description: "Target environment"
         required: true
-        default: "staging"
+        default: "stg"
         type: choice
         options:
-          - staging
-          - production
+          - stg
+          - prod
       rollback_tag:
         description: "Optional rollback tag to redeploy"
         required: false
         default: ""
+      image_digest:
+        description: "Optional immutable image digest (sha256:...) for production deploys"
+        required: false
+        default: ""
 
 concurrency:
-  group: cd-ocr-${{ github.ref }}
+  group: cd-ocr-${{ github.ref }}-${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
   cancel-in-progress: false
 
 permissions:
@@ -27,11 +31,12 @@ permissions:
   packages: read
 
 jobs:
-  deploy-staging:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+  deploy:
     runs-on: ubuntu-latest
-    environment: staging
+    timeout-minutes: 15
+    environment: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
     env:
+      TARGET_ENV: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
       ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
     steps:
       - uses: actions/checkout@v4
@@ -48,100 +53,109 @@ jobs:
         env:
           GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
         run: |
-          echo "Authenticating to GCP (staging)..."
+          set -euo pipefail
+          echo "Authenticating to GCP (${TARGET_ENV})..."
           # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
 
-      - name: Deploy OCR worker to Cloud Run (staging)
+      - name: Deploy OCR worker to Cloud Run (stg)
+        if: env.TARGET_ENV == 'stg'
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
+          set -euo pipefail
           SERVICE_NAME=cb-ocr
-          echo "Deploying $SERVICE_NAME to staging Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/ocr:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          echo "Deploying ${SERVICE_NAME} to stg Cloud Run in ${REGION}"
+          echo "gcloud run deploy ${SERVICE_NAME}-stg --image ghcr.io/${{ github.repository }}/ocr:latest --region ${REGION} --project ${GCP_PROJECT_ID} --concurrency 5"
 
       - name: Authenticate to GHCR
+        if: env.TARGET_ENV == 'stg'
         env:
-          GHCR_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
+          set -euo pipefail
           echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Capture deployed image digest (staging)
+      - name: Capture deployed image digest (stg)
+        if: env.TARGET_ENV == 'stg'
         run: |
+          set -euo pipefail
           mkdir -p artifacts/digests
           docker pull ghcr.io/${{ github.repository }}/ocr:latest
-          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/ocr:latest > artifacts/digests/ocr.txt
+          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/ocr:latest > artifacts/digests/ocr-stg.txt
 
-      - name: Upload staging digest artifact
+      - name: Upload stg digest artifact
+        if: env.TARGET_ENV == 'stg'
         uses: actions/upload-artifact@v4
         with:
-          name: ocr-staging-digest
-          path: artifacts/digests/ocr.txt
+          name: ocr-stg-digest
+          path: artifacts/digests/ocr-stg.txt
           retention-days: 7
 
-  deploy-production:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-    runs-on: ubuntu-latest
-    needs: []
-    timeout-minutes: 10
-    environment: production
-    env:
-      ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
-    steps:
-      - name: Confirm manual approval
-        run: |
-          echo "Production deployment is gated by the GitHub environment approval queue."
-          if [ -n "${ROLLBACK_TAG}" ]; then
-            echo "Rollback tag specified: ${ROLLBACK_TAG}"
-          else
-            echo "No rollback tag provided; deploying latest image."
-          fi
-
-      - uses: actions/checkout@v4
-
-      - name: Cache pip wheels
-        uses: actions/cache@v4
+      - name: Download stg digest
+        if: env.TARGET_ENV == 'prod'
+        uses: actions/download-artifact@v4
         with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
+          name: ocr-stg-digest
+          path: artifacts/digests
+        continue-on-error: true
 
-      - name: Authenticate to Google Cloud
+      - name: Resolve immutable image reference (prod)
+        if: env.TARGET_ENV == 'prod'
+        id: image
         env:
-          GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
+          IMAGE_DIGEST_INPUT: ${{ github.event.inputs.image_digest }}
         run: |
-          echo "Authenticating to GCP (production)..."
-          # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
+          set -euo pipefail
+          if [ -n "${IMAGE_DIGEST_INPUT}" ]; then
+            IMAGE_REF="ghcr.io/${{ github.repository }}/ocr@${IMAGE_DIGEST_INPUT}"
+          elif [ -n "${ROLLBACK_TAG}" ]; then
+            if [[ "${ROLLBACK_TAG}" == sha256:* ]]; then
+              IMAGE_REF="ghcr.io/${{ github.repository }}/ocr@${ROLLBACK_TAG}"
+            else
+              IMAGE_REF="ghcr.io/${{ github.repository }}/ocr:${ROLLBACK_TAG}"
+            fi
+          elif [ -f artifacts/digests/ocr-stg.txt ]; then
+            DIGEST=$(cat artifacts/digests/ocr-stg.txt)
+            IMAGE_REF="ghcr.io/${{ github.repository }}/ocr@${DIGEST}"
+          else
+            echo "::error ::Provide image_digest, rollback_tag, or ensure stg digest artifact exists."
+            exit 1
+          fi
+          echo "Resolved image reference: ${IMAGE_REF}"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy OCR worker to Cloud Run (production)
+      - name: Deploy OCR worker to Cloud Run (prod)
+        if: env.TARGET_ENV == 'prod'
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
+          set -euo pipefail
           SERVICE_NAME=cb-ocr
-          IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:latest"
-          if [ -n "${ROLLBACK_TAG}" ]; then
-            IMAGE_TAG="ghcr.io/${{ github.repository }}/ocr:${ROLLBACK_TAG}"
-            echo "Rollback tag detected; preparing rollback to ${ROLLBACK_TAG}"
-          fi
-          echo "Deploying $SERVICE_NAME to production Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-prod --image ${IMAGE_TAG} --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          IMAGE_REF="${{ steps.image.outputs.image_ref }}"
+          echo "Deploying ${SERVICE_NAME} to prod Cloud Run in ${REGION}"
+          echo "gcloud run deploy ${SERVICE_NAME}-prod --image ${IMAGE_REF} --region ${REGION} --project ${GCP_PROJECT_ID} --concurrency 5"
 
       - name: Emit structured rollback log
+        if: env.TARGET_ENV == 'prod'
         env:
-          OP_ID: ocr-production-rollback
+          OP_ID: ocr-prod-rollback
         run: |
+          set -euo pipefail
           printf '{"ts":"%s","opId":"%s","code":"deploy","duration_ms":0,"message":"Rollback deployment completed"}\n' "$(date -u +%FT%TZ)" "$OP_ID"
 
       - name: Run PDPA retention job
+        if: env.TARGET_ENV == 'prod'
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          RETENTION_TAG: ${{ github.event.inputs.rollback_tag }}
         run: |
-          bash scripts/run-retention-job.sh --environment production --tag "${RETENTION_TAG:-latest}" --op-id ocr-production-rollback
+          set -euo pipefail
+          bash scripts/run-retention-job.sh --environment prod --tag "${ROLLBACK_TAG:-latest}" --op-id ocr-prod-rollback
 
       - name: Post-deploy verification reminder
+        if: env.TARGET_ENV == 'prod'
         run: |
-          echo "Verify /healthz and /readyz endpoints after production rollout."
+          set -euo pipefail
+          echo "Verify /healthz and /readyz endpoints after prod rollout."

@@ -5,7 +5,7 @@ This document captures baseline KPIs prior to CI/CD hardening changes. Update be
 ## Current Snapshot
 - **Captured At**: {{TIMESTAMP}}
 - **API P95 Latency**: {{API_P95_MS}} ms (from `scripts/measure-latency.py`)
-- **OCR Success Rate**: {{OCR_SUCCESS_RATE}} % (from latest staging workflow logs)
+- **OCR Success Rate**: {{OCR_SUCCESS_RATE}} % (from latest stg workflow logs)
 - **CI Duration (Ruff → GHCR)**: {{CI_DURATION_MS}} ms (from `scripts/run-all-checks.sh` summary)
 - **Evidence Artifacts**: `artifacts/ci/local-summary-<timestamp>.md`, Supabase smoke test logs in `artifacts/supabase/`
 

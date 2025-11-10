@@ -47,6 +47,6 @@ This document tracks the low-cost operating limits for Container Base services s
 ## Simulation Checklist
 
 - [ ] Run `pytest tests/integration/test_cost_guardrails.py` to verify documentation still lists thresholds and rollback steps.
-- [ ] Execute staging load test (k6 script) monthly to exercise Cloud Run guardrail alerting.
+- [ ] Execute stg load test (k6 script) monthly to exercise Cloud Run guardrail alerting.
 - [ ] Confirm Supabase and Vercel alert emails reach on-call distribution list each quarter.
 - [ ] Capture latency snapshots with `python scripts/measure-latency.py --iterations 5 --append` before and after major releases; review appended tables in this document.

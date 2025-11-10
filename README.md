@@ -21,7 +21,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 
 ## Getting Started
 
-1. **Clone the repo and sync staging branch**
+1. **Clone the repo and sync stg branch**
    ```bash
    git clone https://github.com/saemanas/container-base.git
    cd container-base
@@ -46,24 +46,41 @@ Container Base replaces manual container logging with automated recognition, GPS
    npm install --prefix src/apps/portal
    npx expo install --cwd src/apps/mobile
    ```
-5. **Run local validation before committing**
+5. **Launch Supabase CLI stack (local)**
+   ```bash
+   supabase start
+   ```
+   The CLI prints connection details such as:
+   - `API URL`: `http://127.0.0.1:54321`
+   - `Publishable key`: `sb_publishable_...`
+   - `Secret key`: `sb_secret_...`
+
+   Export the keys for your shell session (do **not** commit them):
+   ```bash
+   export SUPABASE_URL=http://127.0.0.1:54321
+   export SUPABASE_ANON_KEY="sb_publishable_..."
+   export SUPABASE_SERVICE_ROLE_KEY="sb_secret_..."
+   ```
+   When finished, stop the stack with `supabase stop`.
+
+6. **Run local validation before committing**
    ```bash
    ./scripts/run-all-checks.sh
    ```
    The script executes Ruff → Pytest → ESLint in the mandated order, records `{ts, opId, code, duration_ms}` metrics, and stages artifacts under `artifacts/ci/` so rollback drills have rehearsal evidence.
-6. **Populate environment templates**
+7. **Populate environment templates**
    - Fill in the placeholder values inside `src/apps/*/.env.example`.
    - Real secrets belong in GitHub Actions, Cloud Run, Supabase, Vercel, and Expo secret stores (see `docs/deployment/secrets-catalog.md`).
-7. **Bootstrap services locally**
+8. **Bootstrap services locally (local → stg → prod flow)**
    ```bash
    ./scripts/run-local.sh
    ```
    The launcher coordinates API, OCR worker, portal, and mobile dev servers while tailing logs for each surface.@scripts/run-local.sh#1-115
 
 ### Compliance evidence helpers
-- **PDPA retention rehearsal**: `bash scripts/run-retention-job.sh --environment staging --tag <rollback-tag> --op-id rehearsal-<date>` generates Supabase confirmation logs in `artifacts/pdpa/` for rollback drills.
-- **Notification snapshots**: `python scripts/send-ci-email.py --event success --service api --environment production --ref <tag> --duration PT5M --artifact-url <artifact> --workflow-run-url <run> --op-id notif-<tag>` writes `.eml` files to `artifacts/notifications/` so email proofs accompany release notes.
-- **Quota capture**: `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-production --append` stores the latest Supabase / Cloud Run / Vercel usage JSON and appends a markdown table to `docs/deployment/observability.md`.
+- **PDPA retention rehearsal**: `bash scripts/run-retention-job.sh --environment stg --tag <rollback-tag> --op-id rehearsal-<date>` generates Supabase confirmation logs in `artifacts/pdpa/` for rollback drills.
+- **Notification snapshots**: `python scripts/send-ci-email.py --event success --service api --environment prod --ref <tag> --duration PT5M --artifact-url <artifact> --workflow-run-url <run> --op-id notif-<tag>` writes `.eml` files to `artifacts/notifications/` so email proofs accompany release notes.
+- **Quota capture**: `python scripts/check-free-tier.py --artifact-dir artifacts/quotas --op-id quota-prod --append` stores the latest Supabase / Cloud Run / Vercel usage JSON and appends a markdown table to `docs/deployment/observability.md`.
 
 ## Continuous Integration
 
@@ -75,8 +92,8 @@ Container Base replaces manual container logging with automated recognition, GPS
 ## Deployment
 
 ### Branch Workflow
-- `main`: Production branch (protected). Only release-ready changes merge here.
-- `develop`: Staging branch (protected). Integrates validated spec branches before release.
+- `main`: prod branch (protected). Only release-ready changes merge here.
+- `develop`: stg branch (protected). Integrates validated spec branches before release.
 - `NNN-some-spec`: Working branches are named after their spec-kit ID (e.g., `002-billing-api`). Branch from `develop`, complete the spec plan/tasks, then merge back via pull request after CI green and review approval.
 
 **Protection rules (GitHub API snapshot, 2025-11-09)**  
@@ -95,33 +112,34 @@ Container Base replaces manual container logging with automated recognition, GPS
    ```bash
    pytest tests/backend/test_pdpa_compliance.py tests/worker/test_ocr_pdpa.py
    ```
-3. **Kick off staging deploy** (auto on `develop`, or manual trigger):
-   ```bash
-   gh workflow run deploy-api.yml --ref develop --field environment=staging
-   gh workflow run deploy-ocr.yml --ref develop --field environment=staging
-   gh workflow run deploy-portal.yml --ref develop --field environment=staging
-   ```
-4. **Smoke test staging**
-   ```bash
-   curl https://api-stg.container-base.com/healthz
-   curl https://ocr-stg.container-base.com/healthz
-   ```
-   Confirm portal loads via Vercel preview and Supabase connectivity is intact.
-5. **Promote to production** (manual approval + tag)
-   ```bash
-   gh workflow run deploy-api.yml --ref main --field environment=production --field rollback_tag=v1.2.3
-   gh workflow run deploy-ocr.yml --ref main --field environment=production --field rollback_tag=v1.2.3
-   gh workflow run deploy-portal.yml --ref main --field environment=production
-   ```
-6. **Post-deploy validation**
-   ```bash
-   curl https://api.container-base.com/readyz
-   curl https://ocr.container-base.com/readyz
+3. **Kick off stg deploy** (auto on `develop`, or manual trigger):
+    ```bash
+    gh workflow run deploy-api.yml --ref develop --field environment=stg
+    gh workflow run deploy-ocr.yml --ref develop --field environment=stg
+    gh workflow run deploy-portal.yml --ref develop --field environment=stg
+    ```
+4. **Smoke test stg**
+    ```bash
+    curl https://api-stg.container-base.com/healthz
+    curl https://ocr-stg.container-base.com/healthz
+    ```
+    Confirm portal loads via Vercel preview and Supabase connectivity is intact.
+5. **Promote to prod** (manual approval + tag)
+    ```bash
+    gh workflow run deploy-api.yml --ref main --field environment=prod --field rollback_tag=v1.2.3
+    gh workflow run deploy-ocr.yml --ref main --field environment=prod --field rollback_tag=v1.2.3
+    gh workflow run deploy-portal.yml --ref main --field environment=prod
+    - Ensure the stg deploy references `NEXT_PUBLIC_API_BASE_URL=https://api-stg.container-base.com` and renders deploy status assets (`src/apps/portal/public/deploy-status/en.json`, `th.json`).
+   Check Vercel production domain, Supabase dashboards, and Cloud Run metrics for error spikes.
+7. **Post-deploy validation**
+    ```bash
+    curl https://api.container-base.com/readyz
+    curl https://ocr.container-base.com/readyz
    ```
    Check Vercel production domain, Supabase dashboards, and Cloud Run metrics for error spikes.
-7. **Rollback reference**
+8. **Rollback reference**
    If issues arise, consult `docs/deployment/rollback-playbook.md` for tag-based rollback commands and communication checklist.
-8. **Observability update**
+9. **Observability update**
    - Run `python scripts/check-free-tier.py --append` after release to record quota usage.
    - Optionally execute `python scripts/measure-latency.py --iterations 10` and log results per `docs/deployment/cost-guardrails.md`.
 

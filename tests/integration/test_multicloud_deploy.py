@@ -16,36 +16,32 @@ DEPLOY_OCR_WORKFLOW = REPO_ROOT / ".github/workflows/cd-ocr.yml"
     "workflow_path",
     [DEPLOY_API_WORKFLOW, DEPLOY_OCR_WORKFLOW],
 )
-def test_deploy_workflows_define_environments(workflow_path: Path) -> None:
-    """Deploy workflows must declare staging and production environments."""
+def test_deploy_workflows_define_environment_options(workflow_path: Path) -> None:
+    """Deploy workflows must expose stg/prod options for manual dispatch."""
     assert workflow_path.exists(), f"Workflow missing: {workflow_path}"
     content = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
-    jobs = content.get("jobs", {})
-    assert "deploy-staging" in jobs, "Staging job is required"
-    assert "deploy-production" in jobs, "Production job is required"
+    dispatch = (
+        content.get("on", {})
+        .get("workflow_dispatch", {})
+        .get("inputs", {})
+        .get("environment", {})
+    )
+    options = dispatch.get("options", [])
+    assert "stg" in options, "stg option must be available"
+    assert "prod" in options, "prod option must be available"
 
 
-def test_deploy_workflows_require_manual_production_gate() -> None:
-    """Production deploy job must document approval gate and environment guard."""
+def test_deploy_workflows_require_prod_gate_message() -> None:
+    """Prod deploy must mention approval context so reviewers notice the gate."""
     api_workflow = yaml.safe_load(DEPLOY_API_WORKFLOW.read_text(encoding="utf-8"))
-    production_job = api_workflow["jobs"]["deploy-production"]
-    environment = production_job.get("environment")
+    deploy_job = api_workflow["jobs"]["deploy"]
+    steps = deploy_job.get("steps", [])
 
-    if isinstance(environment, dict):
-        env_name = environment.get("name", "")
-    else:
-        env_name = environment or ""
-
-    assert env_name.lower() == "production", "Production job must target production environment"
-
-    steps = production_job.get("steps", [])
-
-    def contains_approval(step: object) -> bool:
+    def mentions_prod_gate(step: object) -> bool:
         if isinstance(step, dict):
-            inspect_values = [step.get("name", ""), step.get("run", ""), step.get("with", "")]
-            normalized = " ".join(str(value) for value in inspect_values)
+            text = " ".join(str(step.get(key, "")) for key in ("name", "run", "with"))
         else:
-            normalized = str(step)
-        return "approval" in normalized.lower()
+            text = str(step)
+        return "prod" in text.lower() and "approval" in text.lower()
 
-    assert any(contains_approval(step) for step in steps), "Production job should mention approval gate"
+    assert any(mentions_prod_gate(step) for step in steps), "Prod gate messaging must be present"

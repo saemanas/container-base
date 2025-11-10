@@ -9,18 +9,18 @@ on:
       environment:
         description: "Target environment"
         required: true
-        default: staging
+        default: stg
         type: choice
         options:
-          - staging
-          - production
+          - stg
+          - prod
       backend_ready_url:
         description: "Optional override for backend readiness endpoint"
         required: false
         default: ""
 
 concurrency:
-  group: cd-portal-${{ github.ref }}
+  group: cd-portal-${{ github.ref }}-${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
   cancel-in-progress: false
 
 env:
@@ -29,31 +29,42 @@ env:
   STATUS_ASSET_DIR: src/apps/portal/public/deploy-status
 
 jobs:
-  deploy-staging:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+  deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: staging
+    timeout-minutes: 20
+    environment: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
+    env:
+      TARGET_ENV: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
+      READY_URL_INPUT: ${{ github.event.inputs.backend_ready_url }}
     steps:
+      - name: Confirm prod approval context
+        if: env.TARGET_ENV == 'prod'
+        run: echo "Prod deployment requires GitHub environment approval before this job runs."
+
       - uses: actions/checkout@v4
 
       - name: Wait for backend readiness
         env:
-          READY_URL_INPUT: ${{ github.event.inputs.backend_ready_url }}
-          DEFAULT_READY_URL: ${{ secrets.API_READY_URL_STAGING }}
+          READY_URL_STG: ${{ secrets.API_READY_URL_STG }}
+          READY_URL_PROD: ${{ secrets.API_READY_URL_PROD }}
         run: |
           set -euo pipefail
-          URL="${READY_URL_INPUT:-${DEFAULT_READY_URL:-https://api-stg.container-base.com/readyz}}"
-          echo "Waiting for backend at $URL"
+          if [ "${TARGET_ENV}" = "prod" ]; then
+            DEFAULT_URL="${READY_URL_PROD:-https://api.container-base.com/readyz}"
+          else
+            DEFAULT_URL="${READY_URL_STG:-https://api-stg.container-base.com/readyz}"
+          fi
+          URL="${READY_URL_INPUT:-${DEFAULT_URL}}"
+          echo "Waiting for backend at ${URL}"
           for attempt in 1 2 3 4 5; do
-            if curl -sf "$URL" >/dev/null; then
+            if curl -sf "${URL}" >/dev/null; then
               echo "Backend is ready"
               exit 0
             fi
-            echo "Attempt $attempt failed; retrying in 10s"
+            echo "Attempt ${attempt} failed; retrying in 10s"
             sleep 10
           done
-          echo "::error ::Backend readiness check failed for $URL"
+          echo "::error ::Backend readiness check failed for ${URL}"
           exit 1
 
       - name: Set up Node.js
@@ -72,65 +83,39 @@ jobs:
       - name: Verify portal EN/TH status assets
         run: |
           set -euo pipefail
-          node -e "const fs=require('fs'); const required=['${STATUS_ASSET_DIR}/en.json','${STATUS_ASSET_DIR}/th.json']; const missing=required.filter(p=>!fs.existsSync(p)); if(missing.length){console.error('Missing deploy status assets:', missing.join(', ')); process.exit(1);}"
+          node -e "const fs=require('fs'); const required=['${STATUS_ASSET_DIR}/en.json','${STATUS_ASSET_DIR}/th.json']; const missing=required.filter(p=>!fs.existsSync(p)); if(missing.length){console.error('Missing deploy status assets:', missing.join(', ')); process.exit(1);}" 
 
       - name: Deploy via Vercel (placeholder)
         run: |
-          echo "Simulating Vercel deploy for staging"
-          echo "vercel deploy --prod --token ***"
+          set -euo pipefail
+          if [ "${TARGET_ENV}" = "prod" ]; then
+            echo "Simulating Vercel deploy for prod"
+            echo "vercel deploy --prod --token ***"
+          else
+            echo "Simulating Vercel deploy for stg preview"
+            echo "vercel deploy --pre​view --token ***"
 
-  deploy-production:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-    runs-on: ubuntu-latest
-    environment:
-      name: production
-    steps:
-      - name: Confirm manual approval
-        run: echo "Production deployment requires environment approval via GitHub."
-
-      - uses: actions/checkout@v4
-
-      - name: Wait for backend readiness
+      - name: Purge Cloudflare cache and verify DNS propagation
+        if: env.TARGET_ENV == 'prod'
         env:
-          READY_URL_INPUT: ${{ github.event.inputs.backend_ready_url }}
-          DEFAULT_READY_URL: ${{ secrets.API_READY_URL_PRODUCTION }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PORTAL }}
+          TARGET_DOMAIN: portal.container-base.com
         run: |
           set -euo pipefail
-          URL="${READY_URL_INPUT:-${DEFAULT_READY_URL:-https://api.container-base.com/readyz}}"
-          echo "Waiting for backend at $URL"
-          for attempt in 1 2 3 4 5; do
-            if curl -sf "$URL" >/dev/null; then
-              echo "Backend is ready"
-              exit 0
-            fi
-            echo "Attempt $attempt failed; retrying in 10s"
-            sleep 10
-          done
-          echo "::error ::Backend readiness check failed for $URL"
-          exit 1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
-
-      - name: Install dependencies
-        run: npm install --prefix ${{ env.PORTAL_DIR }}
-
-      - name: Build portal
-        run: npm run build --prefix ${{ env.PORTAL_DIR }}
-
-      - name: Verify portal EN/TH status assets
-        run: |
-          set -euo pipefail
-          node -e "const fs=require('fs'); const required=['${STATUS_ASSET_DIR}/en.json','${STATUS_ASSET_DIR}/th.json']; const missing=required.filter(p=>!fs.existsSync(p)); if(missing.length){console.error('Missing deploy status assets:', missing.join(', ')); process.exit(1);}"
-
-      - name: Deploy via Vercel (placeholder)
-        run: |
-          echo "Simulating Vercel production deploy"
-          echo "vercel deploy --prod --token ***"
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ZONE_ID}" ]; then
+            echo "::warning ::Cloudflare credentials not configured; skipping propagation check. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID_PORTAL secrets to enable."
+            exit 0
+          fi
+          echo "Purging Cloudflare cache for ${TARGET_DOMAIN}"
+          curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo "Waiting for DNS propagation"
+          sleep 5
+          dig +short "${TARGET_DOMAIN}"
 
       - name: Post-deploy status reminder
-        run: echo "Verify portal EN/TH deployment statuses visually after production rollout."
+        if: env.TARGET_ENV == 'prod'
+        run: echo "Verify portal EN/TH deployment statuses visually after prod rollout."

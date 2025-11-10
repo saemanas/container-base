@@ -10,18 +10,18 @@ This playbook documents how to connect the Container Base surfaces to Cloudflare
   - `ocr.example.com` → Cloud Run (OCR worker)
   - `portal.example.com` → Vercel (Portal web app)
 - Cloud Run services created (`cb-api-stg`, `cb-api-prod`, `cb-ocr-stg`, `cb-ocr-prod`).
-- Vercel project created with staging/production domains.
+- Vercel project created with stg/prod domains.
 
 ## DNS Records
 
 | Surface | Type | Name | Target | TTL |
 |---------|------|------|--------|-----|
-| API (staging) | CNAME | `api-stg` | `cb-api-stg-<hash>.run.app` | Auto |
-| API (production) | CNAME | `api` | `cb-api-prod-<hash>.run.app` | Auto |
-| OCR (staging) | CNAME | `ocr-stg` | `cb-ocr-stg-<hash>.run.app` | Auto |
-| OCR (production) | CNAME | `ocr` | `cb-ocr-prod-<hash>.run.app` | Auto |
-| Portal (staging) | CNAME | `portal-stg` | `<staging>.vercel.app` | Auto |
-| Portal (production) | CNAME | `portal` | `<production>.vercel.app` | Auto |
+| API (stg) | CNAME | `api-stg` | `cb-api-stg-<hash>.run.app` | Auto |
+| API (prod) | CNAME | `api` | `cb-api-prod-<hash>.run.app` | Auto |
+| OCR (stg) | CNAME | `ocr-stg` | `cb-ocr-stg-<hash>.run.app` | Auto |
+| OCR (prod) | CNAME | `ocr` | `cb-ocr-prod-<hash>.run.app` | Auto |
+| Portal (stg) | CNAME | `portal-stg` | `<stg>.vercel.app` | Auto |
+| Portal (prod) | CNAME | `portal` | `<prod>.vercel.app` | Auto |
 
 > Replace `<hash>` with the Cloud Run managed domain suffix generated per revision. For production, pin the CNAME to the custom domain bound via `gcloud run domain-mappings`.
 
@@ -45,7 +45,7 @@ This playbook documents how to connect the Container Base surfaces to Cloudflare
 
 - [ ] `curl https://api.example.com/healthz` returns HTTP 200 with `{ "status": "ok" }`.
 - [ ] `curl https://ocr.example.com/healthz` returns HTTP 200 with `{ "status": "ok" }`.
-- [ ] Portal domain resolves and loads with the expected environment banner (staging vs production).
+- [ ] Portal domain resolves and loads with the expected environment banner (stg vs prod).
 - [ ] Cloudflare analytics confirm traffic is proxied (orange cloud enabled) and free-tier bandwidth is within quota.
 
 ## Incident Response

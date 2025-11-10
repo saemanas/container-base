@@ -8,18 +8,22 @@ on:
       environment:
         description: "Target environment"
         required: true
-        default: "staging"
+        default: "stg"
         type: choice
         options:
-          - staging
-          - production
+          - stg
+          - prod
       rollback_tag:
         description: "Optional rollback tag to redeploy"
         required: false
         default: ""
+      image_digest:
+        description: "Optional immutable image digest (sha256:...) for production deploys"
+        required: false
+        default: ""
 
 concurrency:
-  group: cd-api-${{ github.ref }}
+  group: cd-api-${{ github.ref }}-${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
   cancel-in-progress: false
 
 permissions:
@@ -27,11 +31,12 @@ permissions:
   packages: read
 
 jobs:
-  deploy-staging:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+  deploy:
     runs-on: ubuntu-latest
-    environment: staging
+    timeout-minutes: 15
+    environment: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
     env:
+      TARGET_ENV: ${{ (github.event_name == 'push' && 'stg') || github.event.inputs.environment || 'stg' }}
       ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
     steps:
       - uses: actions/checkout@v4
@@ -48,144 +53,130 @@ jobs:
         env:
           GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
         run: |
-          echo "Authenticating to GCP (staging)..."
+          set -euo pipefail
+          echo "Authenticating to GCP (${TARGET_ENV})..."
           # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
 
-      - name: Deploy to Cloud Run (staging)
+      - name: Deploy to Cloud Run (stg)
+        if: env.TARGET_ENV == 'stg'
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
+          set -euo pipefail
           SERVICE_NAME=cb-api
-          echo "Deploying $SERVICE_NAME to staging Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-stg --image ghcr.io/${{ github.repository }}/api:latest --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          echo "Deploying ${SERVICE_NAME} to stg Cloud Run in ${REGION}"
+          echo "gcloud run deploy ${SERVICE_NAME}-stg --image ghcr.io/${{ github.repository }}/api:latest --region ${REGION} --project ${GCP_PROJECT_ID} --concurrency 5"
 
       - name: Authenticate to GHCR
+        if: env.TARGET_ENV == 'stg'
         env:
-          GHCR_TOKEN: ${{ github.token }}
+          GHCR_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         run: |
+          set -euo pipefail
           echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Capture deployed image digest (staging)
+      - name: Capture deployed image digest (stg)
+        if: env.TARGET_ENV == 'stg'
         run: |
+          set -euo pipefail
           mkdir -p artifacts/digests
           docker pull ghcr.io/${{ github.repository }}/api:latest
-          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/api:latest > artifacts/digests/api.txt
+          docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/api:latest > artifacts/digests/api-stg.txt
 
-      - name: Upload staging digest artifact
+      - name: Upload stg digest artifact
+        if: env.TARGET_ENV == 'stg'
         uses: actions/upload-artifact@v4
         with:
-          name: api-staging-digest
-          path: artifacts/digests/api.txt
+          name: api-stg-digest
+          path: artifacts/digests/api-stg.txt
           retention-days: 7
 
-  deploy-production:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-    runs-on: ubuntu-latest
-    needs: []
-    timeout-minutes: 10
-    environment: production
-    env:
-      ROLLBACK_TAG: ${{ github.event.inputs.rollback_tag }}
-    steps:
-      - name: Confirm manual approval
-        run: |
-          echo "Production deployment is gated by the GitHub environment approval queue."
-          if [ -n "${ROLLBACK_TAG}" ]; then
-            echo "Rollback tag specified: ${ROLLBACK_TAG}"
-          else
-            echo "No rollback tag provided; deploying latest image."
-          fi
-
-      - uses: actions/checkout@v4
-
-      - name: Cache pip wheels
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('src/apps/**/requirements.txt', 'tests/requirements.txt') }}
-          restore-keys: |
-            pip-${{ runner.os }}-
-
-      - name: Download staging digest
+      - name: Download stg digest
+        if: env.TARGET_ENV == 'prod'
         uses: actions/download-artifact@v4
         with:
-          name: api-staging-digest
+          name: api-stg-digest
           path: artifacts/digests
         continue-on-error: true
 
-      - name: Authenticate to Google Cloud
+      - name: Resolve immutable image reference (prod)
+        if: env.TARGET_ENV == 'prod'
+        id: image
         env:
-          GCLOUD_SERVICE_ACCOUNT_JSON: ${{ secrets.GCLOUD_SERVICE_ACCOUNT_JSON }}
+          IMAGE_DIGEST_INPUT: ${{ github.event.inputs.image_digest }}
         run: |
-          echo "Authenticating to GCP (production)..."
-          # gcloud auth activate-service-account --key-file <(echo "$GCLOUD_SERVICE_ACCOUNT_JSON")
-
-      - name: Resolve immutable image digest
-        id: digest
-        run: |
-          DIGEST_INPUT="${{ github.event.inputs.image_digest }}"
-          if [ -n "${DIGEST_INPUT}" ]; then
-            echo "digest=${DIGEST_INPUT}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if [ -n "${IMAGE_DIGEST_INPUT}" ]; then
+            IMAGE_REF="ghcr.io/${{ github.repository }}/api@${IMAGE_DIGEST_INPUT}"
           elif [ -n "${ROLLBACK_TAG}" ]; then
-            echo "digest=${ROLLBACK_TAG}" >> "$GITHUB_OUTPUT"
-          elif [ -f artifacts/digests/api.txt ]; then
-            DIGEST=$(cat artifacts/digests/api.txt)
-            echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+            if [[ "${ROLLBACK_TAG}" == sha256:* ]]; then
+              IMAGE_REF="ghcr.io/${{ github.repository }}/api@${ROLLBACK_TAG}"
+            else
+              IMAGE_REF="ghcr.io/${{ github.repository }}/api:${ROLLBACK_TAG}"
+            fi
+          elif [ -f artifacts/digests/api-stg.txt ]; then
+            DIGEST=$(cat artifacts/digests/api-stg.txt)
+            IMAGE_REF="ghcr.io/${{ github.repository }}/api@${DIGEST}"
           else
-            echo "::error ::Provide image_digest input or ensure staging digest artifact exists."
+            echo "::error ::Provide image_digest, rollback_tag, or ensure stg digest artifact exists."
             exit 1
           fi
-          echo "Resolved digest: $(cat artifacts/digests/api.txt 2>/dev/null || echo "${DIGEST_INPUT:-${ROLLBACK_TAG}}")"
+          echo "Resolved image reference: ${IMAGE_REF}"
+          echo "image_ref=${IMAGE_REF}" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy to Cloud Run (production)
+      - name: Deploy to Cloud Run (prod)
+        if: env.TARGET_ENV == 'prod'
         env:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
           REGION: ${{ secrets.CLOUD_RUN_REGION }}
         run: |
+          set -euo pipefail
           SERVICE_NAME=cb-api
-          IMAGE_DIGEST="${{ steps.digest.outputs.digest }}"
-          if [[ "${IMAGE_DIGEST}" == *"sha256:"* ]]; then
-            IMAGE_REF="ghcr.io/${{ github.repository }}/api@${IMAGE_DIGEST}"
-          else
-            IMAGE_REF="ghcr.io/${{ github.repository }}/api:${IMAGE_DIGEST}"
-          fi
-          echo "Deploying $SERVICE_NAME to production Cloud Run in $REGION"
-          echo "gcloud run deploy $SERVICE_NAME-prod --image ${IMAGE_REF} --region $REGION --project $GCP_PROJECT_ID --concurrency 5"
+          IMAGE_REF="${{ steps.image.outputs.image_ref }}"
+          echo "Deploying ${SERVICE_NAME} to prod Cloud Run in ${REGION}"
+          echo "gcloud run deploy ${SERVICE_NAME}-prod --image ${IMAGE_REF} --region ${REGION} --project ${GCP_PROJECT_ID} --concurrency 5"
 
       - name: Emit structured rollback log
+        if: env.TARGET_ENV == 'prod'
         env:
-          OP_ID: api-production-rollback
+          OP_ID: api-prod-rollback
         run: |
+          set -euo pipefail
           printf '{"ts":"%s","opId":"%s","code":"deploy","duration_ms":0,"message":"Rollback deployment completed"}\n' "$(date -u +%FT%TZ)" "$OP_ID"
 
       - name: Run PDPA retention job
+        if: env.TARGET_ENV == 'prod'
         env:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          RETENTION_TAG: ${{ github.event.inputs.rollback_tag }}
         run: |
-          bash scripts/run-retention-job.sh --environment production --tag "${RETENTION_TAG:-latest}" --op-id api-production-rollback
+          set -euo pipefail
+          bash scripts/run-retention-job.sh --environment prod --tag "${ROLLBACK_TAG:-latest}" --op-id api-prod-rollback
 
       - name: Post-deploy verification reminder
+        if: env.TARGET_ENV == 'prod'
         run: |
-          echo "Verify /healthz and /readyz endpoints after production rollout."
+          set -euo pipefail
+          echo "Verify /healthz and /readyz endpoints after prod rollout."
 
       - name: Purge Cloudflare cache and verify DNS propagation
+        if: env.TARGET_ENV == 'prod'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_API }}
           TARGET_DOMAIN: api.container-base.com
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ZONE_ID" ]; then
-            echo "::warning ::Cloudflare credentials not configured; skipping propagation check. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID secrets to enable."
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN}" ] || [ -z "${CLOUDFLARE_ZONE_ID}" ]; then
+            echo "::warning ::Cloudflare credentials not configured; skipping propagation check. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID_API secrets to enable."
             exit 0
           fi
-          echo "Purging Cloudflare cache for $TARGET_DOMAIN"
+          echo "Purging Cloudflare cache for ${TARGET_DOMAIN}"
           curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CLOUDFLARE_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data '{"purge_everything":true}'
           echo "Waiting for DNS propagation"
           sleep 5
-          dig +short "$TARGET_DOMAIN"
+          dig +short "${TARGET_DOMAIN}"

@@ -57,7 +57,7 @@ Rationale: Frontline operators adopt CB only when the experience is instant, res
 
 ### Automated CI/CD & Versioned Releases
 Non-negotiable rules:
-- Branch policy: `main` (production), `develop` (staging), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks. GitHub branch protection enforces linear history, strict status checks, admin enforcement, and ≥1 approving review on `main`/`develop`.
+- Branch policy: `main` (prod), `develop` (stg), `feature/<topic>`; commits follow Conventional Commit ≤72 chars and cannot be force-pushed past pre-push hooks. GitHub branch protection enforces linear history, strict status checks, admin enforcement, and ≥1 approving review on `main`/`develop`.
 - CI pipeline order is immutable: Ruff → ESLint → Pytest → OpenAPI Lint → Build → GHCR Push → Tag Deploy, with Playwright/k6/Trivy/SBOM hooks scaffolded for later enforcement.
 - Release Drafter creates notes on every `main` merge; semantic tags (vX.Y.Z) trigger production deploys via Cloud Run/Render/Fly, and rollback by redeploying the previous tag must finish ≤10 minutes.
 - OpenAPI schemas, `/billing/*` contracts, model manifests (`/models/<version>/model.yaml`), and shared DTOs in `contracts/` are the single source of truth; downstream code consumes generated clients only.

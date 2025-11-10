@@ -48,5 +48,5 @@ Schema mirrors `app_stg` with identical table definitions, policies, and indexes
   - Record promotion approvals and rollback readiness in `docs/deployment/rollback-playbook.md`
 
 ## Maintenance
-- Run quarterly review to ensure staging/production parity
+- Run quarterly review to ensure stg/prod parity
 - Document policy updates in `docs/deployment/pdpa-playbook.md`

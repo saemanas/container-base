@@ -88,13 +88,13 @@ Follow this flow to run all services together while pointing to the shared Supab
    curl https://cb-api-stg-<hash>.run.app/readyz
    ```
    Responses should return HTTP 200 with JSON payload `{ "status": "ok" }`.
-3. **Trigger staging deployment**
+3. **Trigger stg deployment**
    ```bash
-   gh workflow run deploy-api.yml --ref main --field environment=staging
+   gh workflow run deploy-api.yml --ref main --field environment=stg
    ```
    Confirm GitHub Actions deploy job completes and Cloud Run revision becomes healthy.
-4. **Manual production approval test**
-   - Open GitHub Actions run for `deploy-api.yml` targeting production.
+4. **Manual prod approval test**
+   - Open GitHub Actions run for `deploy-api.yml` targeting prod.
    - Ensure job pauses on “Manual approval required”; approve to complete rollout.
 5. **Monitor guardrails**
    - Check Cloud Run dashboard for concurrency utilization ≤5 and quota usage <80%.
