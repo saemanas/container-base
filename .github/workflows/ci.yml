@@ -15,20 +15,28 @@ env:
   ACT_SKIP_ARTIFACTS: ""
 
 jobs:
-  python_checks:
+  checks:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        check: [python, portal, openapi]
     env:
       PYTHONPATH: ${{ github.workspace }}
+      PORTAL_DIR: src/apps/portal
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
+        if: matrix.check == 'python'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Cache pip wheels
+        if: matrix.check == 'python'
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -37,11 +45,13 @@ jobs:
             pip-${{ runner.os }}-
 
       - name: Install Python tooling
+        if: matrix.check == 'python'
         run: |
           python -m pip install --upgrade pip
           python -m pip install ruff pytest
 
       - name: Install service dependencies
+        if: matrix.check == 'python'
         run: |
           set -euo pipefail
           for service in api ocr-worker; do
@@ -53,6 +63,7 @@ jobs:
           python -m pip install -r tests/requirements.txt 2>/dev/null || true
 
       - name: Run Ruff checks
+        if: matrix.check == 'python'
         run: |
           set -euo pipefail
           mkdir -p artifacts/ci/ruff
@@ -62,7 +73,7 @@ jobs:
           done
 
       - name: Upload Ruff artifacts
-        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
+        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
           name: ci-ruff-${{ github.run_id }}
@@ -70,13 +81,14 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
       - name: Run PDPA consent regression suite
+        if: matrix.check == 'python'
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/pdpa
           pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pdpa/api.log
 
       - name: Upload PDPA artifacts
-        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
+        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
           name: ci-pdpa-${{ github.run_id }}
@@ -84,6 +96,7 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
       - name: Run Python test suites
+        if: matrix.check == 'python'
         run: |
           set -euo pipefail
           mkdir -p artifacts/ci/pytest
@@ -93,22 +106,15 @@ jobs:
           done
 
       - name: Upload Pytest artifacts
-        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
+        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
           name: ci-pytest-${{ github.run_id }}
           path: artifacts/ci/pytest
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  portal_checks:
-    runs-on: ubuntu-latest
-    env:
-      PORTAL_DIR: src/apps/portal
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
+      - name: Set up Node.js for portal
+        if: matrix.check == 'portal'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -116,26 +122,30 @@ jobs:
           cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
 
       - name: Restore Next.js build cache
+        if: matrix.check == 'portal'
         uses: actions/cache@v4
         with:
           path: ${{ env.PORTAL_DIR }}/.next/cache
           key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
       - name: Install workspace dependencies
+        if: matrix.check == 'portal'
         run: npm ci --workspaces --include=dev
 
       - name: Install portal dependencies
+        if: matrix.check == 'portal'
         working-directory: ${{ env.PORTAL_DIR }}
         run: npm ci --include=dev
 
       - name: Run ESLint
+        if: matrix.check == 'portal'
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/eslint
           npm run lint --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/eslint/portal.log
 
       - name: Upload ESLint artifacts
-        if: always()
+        if: matrix.check == 'portal' && always()
         uses: actions/upload-artifact@v4
         with:
           name: ci-eslint-portal-${{ github.run_id }}
@@ -143,31 +153,26 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
       - name: Verify portal stack baseline
+        if: matrix.check == 'portal'
         run: python3 scripts/check-portal-stack.py
 
       - name: Run portal tests
+        if: matrix.check == 'portal'
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/portal_tests
           npm run test --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/portal_tests/portal.log
 
       - name: Upload portal test artifacts
-        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
+        if: matrix.check == 'portal' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
           name: ci-portal-tests-${{ github.run_id }}
           path: artifacts/ci/portal_tests/portal.log
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  openapi_checks:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node.js
+      - name: Set up Node.js for OpenAPI
+        if: matrix.check == 'openapi'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -175,15 +180,18 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install OpenAPI tooling
+        if: matrix.check == 'openapi'
         run: npm install --include=dev
 
       - name: Lint OpenAPI contract
+        if: matrix.check == 'openapi'
         run: |
           set -o pipefail
           mkdir -p artifacts/ci/openapi_lint
           npx --yes @redocly/cli@2.11.0 lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
 
       - name: Diff OpenAPI contract against base
+        if: matrix.check == 'openapi'
         run: |
           set -euo pipefail
           mkdir -p artifacts/ci/openapi_lint
@@ -213,7 +221,7 @@ jobs:
           fi
 
       - name: Upload OpenAPI artifacts
-        if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
+        if: matrix.check == 'openapi' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
           name: ci-openapi-${{ github.run_id }}
@@ -224,10 +232,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs:
-      - python_checks
-      - portal_checks
-      - openapi_checks
+    needs: checks
     strategy:
       matrix:
         service:
