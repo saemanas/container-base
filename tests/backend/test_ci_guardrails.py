@@ -29,15 +29,26 @@ def test_ci_has_expected_jobs(ci_workflow: dict) -> None:
     jobs = ci_workflow.get("jobs", {})
     stage_order = list(jobs)
 
-    expected = [
-        "python_checks",
-        "portal_checks",
-        "openapi_checks",
-        "build",
-        "ghcr",
-        "tag_deploy",
-    ]
+    expected = ["checks", "build", "ghcr", "tag_deploy"]
 
     # When we compare the defined jobs with the expected guardrail sequence
     # Then they should match exactly to uphold the constitution contract
     assert stage_order == expected, f"CI jobs order mismatch: {stage_order}"
+
+
+def test_ci_checks_matrix_contains_expected_variants(ci_workflow: dict) -> None:
+    """Ensure the consolidated checks job covers all component validations."""
+
+    jobs = ci_workflow.get("jobs", {})
+    checks_job = jobs.get("checks")
+
+    assert checks_job is not None, "Expected consolidated 'checks' job to be defined"
+
+    strategy = checks_job.get("strategy", {})
+    matrix = strategy.get("matrix", {})
+    variants = matrix.get("check")
+
+    expected_variants = ["python", "portal", "openapi"]
+    assert variants == expected_variants, (
+        "Checks matrix must validate python, portal, and openapi variants sequentially"
+    )
