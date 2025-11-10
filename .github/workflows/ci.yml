@@ -211,7 +211,7 @@ jobs:
             cp "$SPEC_PATH" artifacts/ci/openapi_lint/head-openapi.yaml
             docker run --rm \
               -v "$PWD/artifacts/ci/openapi_lint:/data" \
-              ghcr.io/oasdiff/oasdiff:latest diff \
+              tufin/oasdiff:latest diff \
               --fail-on-diff \
               /data/base-openapi.yaml \
               /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log
