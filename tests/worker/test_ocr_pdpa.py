@@ -8,12 +8,12 @@ import pytest
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-PDPA_MODULE_PATH = REPO_ROOT / "src" / "apps" / "ocr-worker" / "ocr" / "pdpa.py"
+PDPA_MODULE_PATH = REPO_ROOT / "src" / "apps" / "ocr" / "app" / "pdpa.py"
 
 
 def test_ocr_pdpa_module_exists() -> None:
     """The OCR PDPA helper module must exist."""
-    assert PDPA_MODULE_PATH.exists(), "Expected src/apps/ocr-worker/ocr/pdpa.py to exist"
+    assert PDPA_MODULE_PATH.exists(), "Expected src/apps/ocr/app/pdpa.py to exist"
 
 
 def _load_pdpa_module():

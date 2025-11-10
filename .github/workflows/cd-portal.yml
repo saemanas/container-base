@@ -1,4 +1,4 @@
-name: CD-Portal
+name: CD - Portal
 
 on:
   push:

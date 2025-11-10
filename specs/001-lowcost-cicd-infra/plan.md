@@ -57,10 +57,10 @@ repo/
 │   └── deploy-portal.yml
 ├── src/apps/api/
 │   ├── Dockerfile
-│   └── service/__main__.py
-├── src/apps/ocr-worker/
+│   └── app/__main__.py
+├── src/apps/ocr/
 │   ├── Dockerfile
-│   └── ocr/__main__.py
+│   └── app/__main__.py
 ├── src/apps/portal/
 │   └── package.json
 ├── src/apps/mobile/

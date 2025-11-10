@@ -4,7 +4,7 @@
   "workspaces": [
     "src/apps/api",
     "src/apps/mobile",
-    "src/apps/ocr-worker",
+    "src/apps/ocr",
     "src/apps/portal"
   ],
   "devDependencies": {

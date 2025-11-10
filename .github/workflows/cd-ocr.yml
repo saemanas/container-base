@@ -1,4 +1,4 @@
-name: CD-OCR
+name: CD - OCR
 
 on:
   push:

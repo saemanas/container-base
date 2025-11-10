@@ -7,7 +7,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 ```
 .
 ├── src/apps/api/               # FastAPI service
-├── src/apps/ocr-worker/        # OCR background worker
+├── src/apps/ocr/               # OCR background worker
 ├── src/apps/portal/            # Next.js portal (Tailwind CSS + shadcn/ui)
 │   └── components/             # Shared UI building blocks (e.g., shadcn buttons)
 ├── src/apps/mobile/            # Expo mobile app
@@ -42,7 +42,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 4. **Install dependencies**
    ```bash
    python -m pip install -r src/apps/api/requirements.txt
-   python -m pip install -r src/apps/ocr-worker/requirements.txt
+   python -m pip install -r src/apps/ocr/requirements.txt
    npm install --prefix src/apps/portal
    npx expo install --cwd src/apps/mobile
    ```
@@ -89,7 +89,7 @@ Container Base replaces manual container logging with automated recognition, GPS
 1. **Activate environment**
    ```bash
    source .venv/bin/activate
-   python -m pip install -r src/apps/api/requirements.txt -r src/apps/ocr-worker/requirements.txt
+   python -m pip install -r src/apps/api/requirements.txt -r src/apps/ocr/requirements.txt
    ```
 2. **Run critical tests**
    ```bash

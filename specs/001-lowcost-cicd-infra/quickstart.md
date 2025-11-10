@@ -22,12 +22,12 @@
 3. **Install tooling**
    ```bash
    python -m pip install -r src/apps/api/requirements.txt
-   python -m pip install -r src/apps/ocr-worker/requirements.txt
+   python -m pip install -r src/apps/ocr/requirements.txt
    npm install --prefix src/apps/portal
    npx expo install --cwd src/apps/mobile
    ```
 4. **Populate `.env.example` templates**
-   - Update `src/apps/api/.env.example`, `src/apps/ocr-worker/.env.example`, `src/apps/portal/.env.example`, and `src/apps/mobile/.env.example` with placeholder keys (no secrets).
+   - Update `src/apps/api/.env.example`, `src/apps/ocr/.env.example`, `src/apps/portal/.env.example`, and `src/apps/mobile/.env.example` with placeholder keys (no secrets).
    - Record live secrets in GitHub, Cloud Run, Vercel, and Supabase environments per `docs/deployment/secrets-catalog.md`.
 5. **Configure Supabase schemas**
    - Create staging (`app_stg`) and production (`app_prod`) schemas.
@@ -54,8 +54,8 @@ Follow this flow to run all services together while pointing to the shared Supab
    ```
 3. **Start OCR worker** (new shell)
    ```bash
-   cd src/apps/ocr-worker
-   python -m ocr
+   cd src/apps/ocr
+   python -m app.main
    ```
 4. **Start portal** (new shell)
    ```bash

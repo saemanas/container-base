@@ -1,4 +1,4 @@
-name: CD-API
+name: CD - API
 
 on:
   push:

@@ -38,6 +38,7 @@ Dockerfile.*~
 
 # Misc
 logs/
+artifacts/
 *.sqlite3
 .codex/
 .windsurf/*

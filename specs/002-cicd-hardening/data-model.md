@@ -29,7 +29,7 @@
   - `id` (UUID).
   - `name` (enum: `staging`, `production`).
   - `cloud_provider` (enum: `cloud_run`, `vercel`, `cloudflare`, `supabase`).
-  - `service_name` (string) — e.g., `api`, `ocr-worker`, `portal`, `dns`.
+  - `service_name` (string) — e.g., `api`, `ocr`, `portal`, `dns`.
   - `gh_environment` (string) — GitHub environment name for secrets.
   - `secrets_bundle_ref` (string) — reference to secrets catalog entry.
   - `success_criteria` (JSONB) — thresholds (latency P95, MTTR, propagation time).

@@ -41,7 +41,7 @@ start_api() {
   echo "Starting API service on port ${API_PORT}..."
   (\
     cd "${ROOT_DIR}/src/apps/api" && \
-    python -m uvicorn service.main:app --reload --port "${API_PORT}" --log-level info \
+    python -m uvicorn app.main:app --reload --port "${API_PORT}" --log-level info \
       > "${ROOT_DIR}/.logs/api.log" 2>&1 &
   )
   pids+=("$!")
@@ -50,8 +50,8 @@ start_api() {
 start_ocr() {
   echo "Starting OCR worker..."
   (\
-    cd "${ROOT_DIR}/src/apps/ocr-worker" && \
-    python -m ocr \
+    cd "${ROOT_DIR}/src/apps/ocr" && \
+    python -m app.main \
       > "${ROOT_DIR}/.logs/ocr.log" 2>&1 &
   )
   pids+=("$!")

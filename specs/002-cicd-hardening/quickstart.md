@@ -11,7 +11,7 @@
    ```bash
    python -m venv .venv
    source .venv/bin/activate
-   pip install -r src/apps/api/requirements.txt -r src/apps/ocr-worker/requirements.txt
+   pip install -r src/apps/api/requirements.txt -r src/apps/ocr/requirements.txt
    ```@README.md#36-82
 2. Install frontend tooling (portal + shared scripts):
    ```bash
@@ -48,7 +48,7 @@
 ## Deployment Dry Run
 1. Use Docker Compose to build API and OCR worker containers with GHCR tags:
    ```bash
-   docker compose -f deploy/docker-compose.ci.yml build api ocr-worker
+   docker compose -f deploy/docker-compose.ci.yml build api ocr
    ```@refs/docs/CB-MiniOps-v1.0.0-en-US.md#140-218
 2. Trigger staging workflows via GitHub CLI:
    ```bash

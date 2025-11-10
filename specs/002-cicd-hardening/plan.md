@@ -50,7 +50,7 @@ repo/
 ├── docs/deployment/            # PDPA, rollout, rollback playbooks
 ├── scripts/                    # run-all-checks.sh, measure-ci.sh helpers
 ├── src/apps/api/               # FastAPI service aligning with CI stages
-├── src/apps/ocr-worker/        # Worker service built/deployed via CI
+├── src/apps/ocr/               # Worker service built/deployed via CI
 ├── src/apps/portal/            # Next.js portal with release status UI
 └── tests/                      # Contract, integration, PDPA guardrail suites
 ```

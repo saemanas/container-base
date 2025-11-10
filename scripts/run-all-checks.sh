@@ -59,7 +59,7 @@ run_step() {
   fi
 }
 
-run_step "Ruff lint (Python)" "${RUFF_BIN}" check "${ROOT_DIR}/src/apps/api" "${ROOT_DIR}/src/apps/ocr-worker"
+run_step "Ruff lint (Python)" "${RUFF_BIN}" check "${ROOT_DIR}/src/apps/api" "${ROOT_DIR}/src/apps/ocr"
 run_step "Pytest" "${PY_ENV}/bin/python" -m pytest "${ROOT_DIR}/tests" --maxfail=1 --disable-warnings -q
 run_step "ESLint (portal)" bash -c "cd '${ROOT_DIR}/src/apps/portal' && npm run lint"
 

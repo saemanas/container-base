@@ -46,7 +46,7 @@ jobs:
       - name: Install service dependencies
         run: |
           set -euo pipefail
-          for service in api ocr-worker; do
+          for service in api ocr; do
             req="src/apps/${service}/requirements.txt"
             if [ -f "$req" ]; then
               python -m pip install -r "$req"
@@ -58,7 +58,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/ci/ruff
-          for service in api ocr-worker; do
+          for service in api ocr; do
             log="artifacts/ci/ruff/${service}.log"
             ruff check "src/apps/${service}" 2>&1 | tee "$log"
           done
@@ -89,7 +89,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/ci/pytest
-          for service in api ocr-worker; do
+          for service in api ocr; do
             log="artifacts/ci/pytest/${service}.log"
             pytest tests --maxfail=1 --disable-warnings -q 2>&1 | tee "$log"
           done
@@ -235,7 +235,7 @@ jobs:
       matrix:
         service:
           - { name: "api", path: "src/apps/api" }
-          - { name: "ocr", path: "src/apps/ocr-worker" }
+          - { name: "ocr", path: "src/apps/ocr" }
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -265,7 +265,7 @@ jobs:
       matrix:
         service:
           - { name: "api", path: "src/apps/api" }
-          - { name: "ocr", path: "src/apps/ocr-worker" }
+          - { name: "ocr", path: "src/apps/ocr" }
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

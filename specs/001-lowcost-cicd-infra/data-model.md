@@ -6,7 +6,7 @@
 - **Purpose**: Describes CI/CD jobs and triggers for each workload.
 - **Key Fields**:
   - `id` (string, unique)
-  - `app` (enum: `api`, `ocr-worker`, `portal`, `mobile`)
+  - `app` (enum: `api`, `ocr`, `portal`, `mobile`)
   - `workflow_file` (string path)
   - `triggers` (list of git events)
   - `stages` (ordered list: Ruff, ESLint, Pytest, OpenAPI Lint, Build, GHCR Push, Tag Deploy)
@@ -18,7 +18,7 @@
 - **Purpose**: Captures hosting targets and deployment configuration.
 - **Key Fields**:
   - `id` (string, unique)
-  - `app` (enum: `api`, `ocr-worker`, `portal`, `mobile`)
+  - `app` (enum: `api`, `ocr`, `portal`, `mobile`)
   - `environment` (enum: `staging`, `production`)
   - `platform` (enum: `cloud-run`, `vercel`, `expo-eas`)
   - `endpoint_url` (string)

@@ -15,7 +15,7 @@ def sample_consent_record() -> dict[str, str | None]:
 
 def test_require_consent_raises_for_missing_record() -> None:
     """API must block access when no consent record is present."""
-    from src.apps.api.service import pdpa  # noqa: PLC0415
+    from src.apps.api.app import pdpa  # noqa: PLC0415
 
     with pytest.raises(pdpa.ConsentMissingError):
         pdpa.require_consent(None)
@@ -23,7 +23,7 @@ def test_require_consent_raises_for_missing_record() -> None:
 
 def test_require_consent_allows_active_consent(sample_consent_record: dict[str, str | None]) -> None:
     """Active consent records should pass without raising."""
-    from src.apps.api.service import pdpa  # noqa: PLC0415
+    from src.apps.api.app import pdpa  # noqa: PLC0415
 
     pdpa.require_consent(sample_consent_record)
 
@@ -37,7 +37,7 @@ def test_require_consent_allows_active_consent(sample_consent_record: dict[str, 
 )
 def test_mask_email_hides_local_part(email: str, expected: str) -> None:
     """Email masking must hide all characters before the domain."""
-    from src.apps.api.service import pdpa  # noqa: PLC0415
+    from src.apps.api.app import pdpa  # noqa: PLC0415
 
     assert pdpa.mask_email(email) == expected
 
@@ -51,6 +51,6 @@ def test_mask_email_hides_local_part(email: str, expected: str) -> None:
 )
 def test_round_gps_three_decimals(latitude: float, longitude: float, expected: tuple[float, float]) -> None:
     """GPS coordinates must round to three decimals before storage/logging."""
-    from src.apps.api.service import pdpa  # noqa: PLC0415
+    from src.apps.api.app import pdpa  # noqa: PLC0415
 
     assert pdpa.round_gps(latitude, longitude) == expected

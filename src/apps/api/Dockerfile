@@ -11,4 +11,4 @@ RUN pip install --no-cache-dir -r requirements.txt || true
 
 COPY . .
 
-CMD ["python", "-m", "api"]
+CMD ["python", "-m", "apps.api.app"]

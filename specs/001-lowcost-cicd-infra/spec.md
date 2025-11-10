@@ -62,7 +62,7 @@ Operations analyst documents and enforces where secrets live (GitHub, platform e
 
 ### Functional Requirements
 
-- **FR-001**: Provide a monorepo directory skeleton (`src/apps/{api, ocr-worker, portal, mobile}` and `.github/workflows/`) so each workload has an isolated build context while sharing governance assets.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#110-123
+- **FR-001**: Provide a monorepo directory skeleton (`src/apps/{api, ocr, portal, mobile}` and `.github/workflows/`) so each workload has an isolated build context while sharing governance assets.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#110-123
 - **FR-002**: Implement a GitHub Actions CI workflow that executes checkout, language runtime setup (Python 3.12, Node 22), lint/tests, and Docker build steps for API/OCR, all triggered on PRs and `main` pushes.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#125-309 @refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md#29-33
 - **FR-003**: Deliver deployment workflows that push API and OCR containers to GHCR and deploy to Cloud Run, plus portal deploy to Vercel Hobby plan, ensuring domain mappings (`api`, `ocr`, `portal`) are documented for Cloudflare DNS setup.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#91-123 @refs/docs/CB-MiniOps-v1.0.0-en-US.md#131-135 @refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md#24-31
 - **FR-004**: Publish `.env.example` templates and secrets catalog covering API_BASE_URL, SUPABASE keys, LINE Login, OCR limits, and logging configuration, with guidance to store real values only in GitHub/hosting secret stores.@refs/docs/CB-MiniOps-v1.0.0-en-US.md#24-27 @refs/docs/CB-MiniOps-v1.0.0-en-US.md#45-63 @refs/docs/CB-MiniOps-v1.0.0-en-US.md#160-170

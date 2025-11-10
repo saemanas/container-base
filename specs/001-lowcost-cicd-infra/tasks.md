@@ -18,7 +18,7 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [X] T001 Initialize repository structure per plan in `src/apps/{api,ocr-worker,portal,mobile}` and `.github/workflows/`
+- [X] T001 Initialize repository structure per plan in `src/apps/{api,ocr,portal,mobile}` and `.github/workflows/`
 - [X] T002 Create placeholder `.env.example` files for each surface under `src/apps/*/.env.example`
 - [X] T003 [P] Document secrets catalog scaffold in `docs/deployment/secrets-catalog.md`
 
@@ -31,9 +31,9 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [X] T004 Configure shared Ruff/ESLint/Prettier settings in `.ruff.toml`, `.eslintrc.cjs`, and `.prettierrc`
-- [X] T005 [P] Add Docker base images and runtime entrypoints in `src/apps/api/Dockerfile` and `src/apps/ocr-worker/Dockerfile`
+- [X] T005 [P] Add Docker base images and runtime entrypoints in `src/apps/api/Dockerfile` and `src/apps/ocr/Dockerfile`
 - [X] T006 [P] Scaffold Supabase schema definitions for `app_stg` and `app_prod` in `docs/deployment/supabase-schema.md`
-- [X] T007 Establish logging utility enforcing `{ts, opId, code, duration_ms}` format in `src/apps/api/service/logging.py`
+- [X] T007 Establish logging utility enforcing `{ts, opId, code, duration_ms}` format in `src/apps/api/app/logging.py`
 - [X] T008 Define PDPA consent and retention policy notes in `docs/deployment/pdpa-playbook.md`
 - [X] T009 Wire baseline quickstart validation script in `scripts/validate-ci.sh`
 - [X] T010 Document concurrent local run workflow in `specs/001-lowcost-cicd-infra/quickstart.md`
@@ -82,9 +82,9 @@
 - [X] T021 [P] [US2] Create `.github/workflows/deploy-api.yml` with staging auto deploy and prod approval gates
 - [X] T022 [P] [US2] Create `.github/workflows/deploy-ocr.yml` mirroring approval strategy
 - [X] T023 [US2] Configure `.github/workflows/deploy-portal.yml` for Vercel hobby deploys with environment targets
-- [X] T024 [US2] Implement health/readiness endpoints in `src/apps/api/service/main.py` and `src/apps/ocr-worker/ocr/main.py`
+- [X] T024 [US2] Implement health/readiness endpoints in `src/apps/api/app/main.py` and `src/apps/ocr/app/main.py`
 - [X] T025 [US2] Update `quickstart.md` deployment verification section with Cloud Run & Vercel steps
-- [X] T041 [P] [US2] Implement structured logging for OCR worker in `src/apps/ocr-worker/ocr/logging.py` and wire into `ocr/main.py`
+- [X] T041 [P] [US2] Implement structured logging for OCR worker in `src/apps/ocr/app/logging.py` and wire into `app/main.py`
 - [X] T042 [US2] Document Cloudflare DNS mapping steps for `api`, `ocr`, and `portal` in `docs/deployment/cloudflare-routing.md`
 
 **Checkpoint**: User Stories 1 and 2 independently operational
@@ -111,8 +111,8 @@
 - [X] T030 [US3] Add Supabase schema + RLS configuration instructions to `docs/deployment/supabase-schema.md`
 - [X] T031 [US3] Update `scripts/validate-ci.sh` to check required environment variables before pipeline run
 - [X] T032 [US3] Document runbook for manual approvals and rollback in `docs/deployment/rollback-playbook.md`
-- [X] T045 [US3] Enforce consent gating, GPS rounding, and email masking in `src/apps/api/service/main.py`
-- [X] T046 [P] [US3] Harden OCR worker credential usage in `src/apps/ocr-worker/ocr/main.py`
+- [X] T045 [US3] Enforce consent gating, GPS rounding, and email masking in `src/apps/api/app/main.py`
+- [X] T046 [P] [US3] Harden OCR worker credential usage in `src/apps/ocr/app/main.py`
 - [X] T047 [US3] Expand `docs/deployment/pdpa-playbook.md` with remediation steps for consent failures
 
 **Checkpoint**: All user stories independently functional

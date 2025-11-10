@@ -1,6 +1,6 @@
 line-length = 100
 target-version = "py312"
-src = ["src/apps/api", "src/apps/ocr-worker"]
+src = ["src/apps/api", "src/apps/ocr"]
 
 [lint]
 select = [

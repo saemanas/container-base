@@ -112,7 +112,7 @@ repo/
   src/
     apps/
       api/
-      ocr-worker/
+      ocr/
       portal/
       mobile/
   .github/workflows/
@@ -150,7 +150,7 @@ repo/
 
 ### **2) Docker Compose**
 
-- Run api and ocr-worker containers
+- Run api and ocr containers
 - Portal and Mobile run locally with hot reload
 
 ---
@@ -165,8 +165,8 @@ repo/
 | SUPABASE_URL, ANON_KEY, SERVICE_ROLE_KEY | DB/Auth/Storage | api |
 | LINE_CHANNEL_ID, SECRET, REDIRECT_URI | LINE Login | api, portal |
 | ALLOW_ORIGINS | CORS allowed domains | api |
-| MAX_IMAGE_MB, TIMEOUT_MS | OCR request limit / timeout | api, ocr-worker |
-| LOG_LEVEL | Logging level | api, ocr-worker, portal |
+| MAX_IMAGE_MB, TIMEOUT_MS | OCR request limit / timeout | api, ocr |
+| LOG_LEVEL | Logging level | api, ocr, portal |
 
 > Values are stored in **GitHub Secrets** or platform environment settings.
 > 
@@ -232,8 +232,8 @@ repo/
 
 ## **10. Operations Checklist**
 
-- **Repo Init:** src/apps/{api, ocr-worker, portal, mobile} + add .env.example
-- **Local Run:** setup Supabase keys → run api, ocr-worker → configure CORS & OCR_URL
+- **Repo Init:** src/apps/{api, ocr, portal, mobile} + add .env.example
+- **Local Run:** setup Supabase keys → run api, ocr → configure CORS & OCR_URL
 - **CI/CD:** define ci.yml → deploy to Cloud Run (API/OCR) + Vercel (Portal) → connect Cloudflare DNS
 - **Secrets:** register JWT_SECRET, SUPABASE_*, LINE_*, CLOUD_*
 - **Ops/Security:** apply RLS, monitor /healthz & /readyz, review logs and metrics dashboards
@@ -254,7 +254,7 @@ EXPOSE 8080
 CMD ["python","-m","api"]
 ```
 
-**src/apps/ocr-worker/Dockerfile**
+**src/apps/ocr/Dockerfile**
 
 ```
 FROM python:3.12-slim AS base
@@ -298,7 +298,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: src/apps/ocr-worker
+        working-directory: src/apps/ocr
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
