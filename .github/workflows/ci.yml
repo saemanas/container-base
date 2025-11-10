@@ -19,10 +19,80 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        check: [python, portal, openapi]
+        include:
+          - check: python
+            setup_python: true
+            script: |
+              set -euo pipefail
+              mkdir -p artifacts/ci/python/ruff artifacts/ci/python/pdpa artifacts/ci/python/pytest
+              python -m pip install --upgrade pip
+              python -m pip install ruff pytest
+              for service in api ocr-worker; do
+                req="src/apps/${service}/requirements.txt"
+                if [ -f "$req" ]; then
+                  python -m pip install -r "$req"
+                fi
+              done
+              python -m pip install -r tests/requirements.txt 2>/dev/null || true
+
+              for service in api ocr-worker; do
+                log="artifacts/ci/python/ruff/${service}.log"
+                ruff check "src/apps/${service}" 2>&1 | tee "$log"
+              done
+
+              pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/python/pdpa/api.log
+
+              for service in api ocr-worker; do
+                log="artifacts/ci/python/pytest/${service}.log"
+                pytest tests --maxfail=1 --disable-warnings -q 2>&1 | tee "$log"
+              done
+            artifact_path: artifacts/ci/python
+          - check: portal
+            setup_node: true
+            script: |
+              set -euo pipefail
+              npm ci --workspaces --include=dev
+              npm ci --include=dev --prefix "$PORTAL_DIR"
+              mkdir -p artifacts/ci/portal/eslint artifacts/ci/portal/tests
+              npm run lint --prefix "$PORTAL_DIR" 2>&1 | tee artifacts/ci/portal/eslint/portal.log
+              python3 scripts/check-portal-stack.py
+              npm run test --prefix "$PORTAL_DIR" 2>&1 | tee artifacts/ci/portal/tests/portal.log
+            artifact_path: artifacts/ci/portal
+          - check: openapi
+            setup_node: true
+            script: |
+              set -euo pipefail
+              mkdir -p artifacts/ci/openapi/lint
+              npm install --include=dev
+              npx --yes @redocly/cli@2.11.0 lint "$SPEC_PATH" 2>&1 | tee artifacts/ci/openapi/lint/lint.log
+
+              BASE_REF=""
+              if [ "${{ github.event_name }}" = "pull_request" ]; then
+                BASE_REF="origin/${{ github.base_ref }}"
+              else
+                BASE_REF="${{ github.sha }}^"
+              fi
+
+              if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+                git show "$BASE_REF:$SPEC_PATH" > artifacts/ci/openapi/lint/base-openapi.yaml || {
+                  echo "Base spec not found; skipping diff" >&2
+                  exit 0
+                }
+                cp "$SPEC_PATH" artifacts/ci/openapi/lint/head-openapi.yaml
+                docker run --rm \
+                  -v "$PWD/artifacts/ci/openapi/lint:/data" \
+                  tufin/oasdiff:latest diff \
+                  --fail-on-diff \
+                  /data/base-openapi.yaml \
+                  /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi/lint/diff.log
+              else
+                echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi/lint/diff.log
+              fi
+            artifact_path: artifacts/ci/openapi
     env:
       PYTHONPATH: ${{ github.workspace }}
       PORTAL_DIR: src/apps/portal
+      SPEC_PATH: specs/001-lowcost-cicd-infra/contracts/openapi.yaml
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -30,13 +100,13 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        if: matrix.check == 'python'
+        if: matrix.setup_python == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Cache pip wheels
-        if: matrix.check == 'python'
+        if: matrix.setup_python == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
@@ -44,82 +114,13 @@ jobs:
           restore-keys: |
             pip-${{ runner.os }}-
 
-      - name: Install Python tooling
-        if: matrix.check == 'python'
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install ruff pytest
-
-      - name: Install service dependencies
-        if: matrix.check == 'python'
-        run: |
-          set -euo pipefail
-          for service in api ocr-worker; do
-            req="src/apps/${service}/requirements.txt"
-            if [ -f "$req" ]; then
-              python -m pip install -r "$req"
-            fi
-          done
-          python -m pip install -r tests/requirements.txt 2>/dev/null || true
-
-      - name: Run Ruff checks
-        if: matrix.check == 'python'
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/ci/ruff
-          for service in api ocr-worker; do
-            log="artifacts/ci/ruff/${service}.log"
-            ruff check "src/apps/${service}" 2>&1 | tee "$log"
-          done
-
-      - name: Upload Ruff artifacts
-        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-ruff-${{ github.run_id }}
-          path: artifacts/ci/ruff
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Run PDPA consent regression suite
-        if: matrix.check == 'python'
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/ci/pdpa
-          pytest tests/backend/test_pdpa_compliance.py --maxfail=1 --disable-warnings -q 2>&1 | tee artifacts/ci/pdpa/api.log
-
-      - name: Upload PDPA artifacts
-        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-pdpa-${{ github.run_id }}
-          path: artifacts/ci/pdpa/api.log
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Run Python test suites
-        if: matrix.check == 'python'
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/ci/pytest
-          for service in api ocr-worker; do
-            log="artifacts/ci/pytest/${service}.log"
-            pytest tests --maxfail=1 --disable-warnings -q 2>&1 | tee "$log"
-          done
-
-      - name: Upload Pytest artifacts
-        if: matrix.check == 'python' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-pytest-${{ github.run_id }}
-          path: artifacts/ci/pytest
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Set up Node.js for portal
-        if: matrix.check == 'portal'
+      - name: Set up Node.js
+        if: matrix.setup_node == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: ${{ env.PORTAL_DIR }}/package-lock.json
+          cache-dependency-path: ${{ matrix.check == 'portal' && format('{0}/package-lock.json', env.PORTAL_DIR) || 'package-lock.json' }}
 
       - name: Restore Next.js build cache
         if: matrix.check == 'portal'
@@ -128,105 +129,17 @@ jobs:
           path: ${{ env.PORTAL_DIR }}/.next/cache
           key: ${{ runner.os }}-next-cache-${{ hashFiles('package-lock.json') }}
 
-      - name: Install workspace dependencies
-        if: matrix.check == 'portal'
-        run: npm ci --workspaces --include=dev
-
-      - name: Install portal dependencies
-        if: matrix.check == 'portal'
-        working-directory: ${{ env.PORTAL_DIR }}
-        run: npm ci --include=dev
-
-      - name: Run ESLint
-        if: matrix.check == 'portal'
+      - name: Run ${{ matrix.check }} checks
+        shell: bash
         run: |
-          set -o pipefail
-          mkdir -p artifacts/ci/eslint
-          npm run lint --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/eslint/portal.log
+          ${{ matrix.script }}
 
-      - name: Upload ESLint artifacts
-        if: matrix.check == 'portal' && always()
+      - name: Upload ${{ matrix.check }} artifacts
+        if: always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
         uses: actions/upload-artifact@v4
         with:
-          name: ci-eslint-portal-${{ github.run_id }}
-          path: artifacts/ci/eslint/portal.log
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Verify portal stack baseline
-        if: matrix.check == 'portal'
-        run: python3 scripts/check-portal-stack.py
-
-      - name: Run portal tests
-        if: matrix.check == 'portal'
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/ci/portal_tests
-          npm run test --prefix ${{ env.PORTAL_DIR }} 2>&1 | tee artifacts/ci/portal_tests/portal.log
-
-      - name: Upload portal test artifacts
-        if: matrix.check == 'portal' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-portal-tests-${{ github.run_id }}
-          path: artifacts/ci/portal_tests/portal.log
-          retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
-
-      - name: Set up Node.js for OpenAPI
-        if: matrix.check == 'openapi'
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install OpenAPI tooling
-        if: matrix.check == 'openapi'
-        run: npm install --include=dev
-
-      - name: Lint OpenAPI contract
-        if: matrix.check == 'openapi'
-        run: |
-          set -o pipefail
-          mkdir -p artifacts/ci/openapi_lint
-          npx --yes @redocly/cli@2.11.0 lint specs/001-lowcost-cicd-infra/contracts/openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/lint.log
-
-      - name: Diff OpenAPI contract against base
-        if: matrix.check == 'openapi'
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/ci/openapi_lint
-          SPEC_PATH="specs/001-lowcost-cicd-infra/contracts/openapi.yaml"
-          BASE_REF=""
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_REF="origin/${{ github.base_ref }}"
-          else
-            BASE_REF="${{ github.sha }}^"
-          fi
-
-          if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
-            git show "$BASE_REF:$SPEC_PATH" > artifacts/ci/openapi_lint/base-openapi.yaml || {
-              echo "Base spec not found; skipping diff" >&2
-              exit 0
-            }
-            cp "$SPEC_PATH" artifacts/ci/openapi_lint/head-openapi.yaml
-            docker run --rm \
-              -v "$PWD/artifacts/ci/openapi_lint:/data" \
-              tufin/oasdiff:latest diff \
-              --fail-on-diff \
-              /data/base-openapi.yaml \
-              /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log
-          else
-            echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
-          fi
-
-      - name: Upload OpenAPI artifacts
-        if: matrix.check == 'openapi' && always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-openapi-${{ github.run_id }}
-          path: |
-            artifacts/ci/openapi_lint/lint.log
-            artifacts/ci/openapi_lint/diff.log
+          name: ci-${{ matrix.check }}-${{ github.run_id }}
+          path: ${{ matrix.artifact_path }}
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   build:
