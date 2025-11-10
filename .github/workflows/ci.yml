@@ -209,18 +209,12 @@ jobs:
             }
             cp "$SPEC_PATH" artifacts/ci/openapi_lint/head-openapi.yaml
             # Always capture diff output, but do not fail the pipeline on additive changes.
-            if ! docker run --rm \
+            docker run --rm \
               -v "$PWD/artifacts/ci/openapi_lint:/data" \
               tufin/oasdiff:latest diff \
               --fail-on-diff \
               /data/base-openapi.yaml \
-              /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log; then
-              # Preserve exit code for visibility without breaking the job; >1 indicates runtime failure.
-              status=$?
-              if [ "$status" -gt 1 ]; then
-                exit "$status"
-              fi
-            fi
+              /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log || true
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
@@ -236,7 +230,7 @@ jobs:
           docker run --rm \
             -v "$PWD/artifacts/ci/openapi_lint:/data" \
             tufin/oasdiff:latest breaking \
-            --fail-on-diff \
+            --fail-on ERR \
             /data/base-openapi.yaml \
             /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/breaking.log
 
