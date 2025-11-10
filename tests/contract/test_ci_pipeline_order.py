@@ -9,9 +9,9 @@ import yaml
 
 CI_WORKFLOW_PATH = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
 EXPECTED_SEQUENCE = [
-    "python_checks",
-    "portal_checks",
-    "openapi_checks",
+    "check_backend",
+    "check_portal",
+    "check_openapi",
     "build",
     "ghcr",
     "tag_deploy",
@@ -38,7 +38,7 @@ def test_ci_jobs_define_parallel_component_checks() -> None:
     """Component check jobs must run independently and gate downstream stages."""
     jobs = _load_workflow()["jobs"]
 
-    check_jobs = ["python_checks", "portal_checks", "openapi_checks"]
+    check_jobs = ["check_backend", "check_portal", "check_openapi"]
     for job_name in check_jobs:
         job_block = jobs.get(job_name)
         assert isinstance(job_block, dict), f"Job {job_name} must be defined"

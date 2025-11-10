@@ -15,7 +15,8 @@ env:
   ACT_SKIP_ARTIFACTS: ""
 
 jobs:
-  python_checks:
+  check_backend:
+    name: check (backend)
     runs-on: ubuntu-latest
     env:
       PYTHONPATH: ${{ github.workspace }}
@@ -102,7 +103,8 @@ jobs:
           path: artifacts/ci/pytest
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  portal_checks:
+  check_portal:
+    name: check (portal)
     runs-on: ubuntu-latest
     env:
       PORTAL_DIR: src/apps/portal
@@ -163,7 +165,8 @@ jobs:
           path: artifacts/ci/portal_tests/portal.log
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
-  openapi_checks:
+  check_openapi:
+    name: check (openapi)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -228,9 +231,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs:
-      - python_checks
-      - portal_checks
-      - openapi_checks
+      - check_backend
+      - check_portal
+      - check_openapi
     strategy:
       matrix:
         service:
@@ -310,6 +313,7 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   tag_deploy:
+    name: tag deploy
     runs-on: ubuntu-latest
     needs: ghcr
     steps:

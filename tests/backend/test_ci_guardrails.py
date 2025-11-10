@@ -30,9 +30,9 @@ def test_ci_has_expected_jobs(ci_workflow: dict) -> None:
     stage_order = list(jobs)
 
     expected = [
-        "python_checks",
-        "portal_checks",
-        "openapi_checks",
+        "check_backend",
+        "check_portal",
+        "check_openapi",
         "build",
         "ghcr",
         "tag_deploy",
@@ -47,7 +47,7 @@ def test_ci_checks_jobs_defined(ci_workflow: dict) -> None:
     """Ensure each component check job is defined without dependencies."""
 
     jobs = ci_workflow.get("jobs", {})
-    check_jobs = ["python_checks", "portal_checks", "openapi_checks"]
+    check_jobs = ["check_backend", "check_portal", "check_openapi"]
 
     for job_name in check_jobs:
         job_block = jobs.get(job_name)
