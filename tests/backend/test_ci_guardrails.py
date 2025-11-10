@@ -29,26 +29,28 @@ def test_ci_has_expected_jobs(ci_workflow: dict) -> None:
     jobs = ci_workflow.get("jobs", {})
     stage_order = list(jobs)
 
-    expected = ["checks", "build", "ghcr", "tag_deploy"]
+    expected = [
+        "python_checks",
+        "portal_checks",
+        "openapi_checks",
+        "build",
+        "ghcr",
+        "tag_deploy",
+    ]
 
     # When we compare the defined jobs with the expected guardrail sequence
     # Then they should match exactly to uphold the constitution contract
     assert stage_order == expected, f"CI jobs order mismatch: {stage_order}"
 
 
-def test_ci_checks_matrix_contains_expected_variants(ci_workflow: dict) -> None:
-    """Ensure the consolidated checks job covers all component validations."""
+def test_ci_checks_jobs_defined(ci_workflow: dict) -> None:
+    """Ensure each component check job is defined without dependencies."""
 
     jobs = ci_workflow.get("jobs", {})
-    checks_job = jobs.get("checks")
+    check_jobs = ["python_checks", "portal_checks", "openapi_checks"]
 
-    assert checks_job is not None, "Expected consolidated 'checks' job to be defined"
-
-    strategy = checks_job.get("strategy", {})
-    matrix = strategy.get("matrix", {})
-    variants = matrix.get("check")
-
-    expected_variants = ["python", "portal", "openapi"]
-    assert variants == expected_variants, (
-        "Checks matrix must validate python, portal, and openapi variants sequentially"
-    )
+    for job_name in check_jobs:
+        job_block = jobs.get(job_name)
+        assert isinstance(job_block, dict), f"Job {job_name} must be defined"
+        needs = job_block.get("needs")
+        assert needs in (None, []), f"Component job {job_name} must not declare dependencies"
