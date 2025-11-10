@@ -8,7 +8,14 @@ import yaml
 
 
 CI_WORKFLOW_PATH = pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/ci.yml"
-EXPECTED_SEQUENCE = ["checks", "build", "ghcr", "tag_deploy"]
+EXPECTED_SEQUENCE = [
+    "python_checks",
+    "portal_checks",
+    "openapi_checks",
+    "build",
+    "ghcr",
+    "tag_deploy",
+]
 
 
 def _load_workflow() -> dict[str, Any]:
@@ -31,19 +38,18 @@ def test_ci_jobs_define_parallel_component_checks() -> None:
     """Component check jobs must run independently and gate downstream stages."""
     jobs = _load_workflow()["jobs"]
 
-    checks_job = jobs.get("checks")
-    assert isinstance(checks_job, dict), "checks job must be defined"
-
-    strategy = checks_job.get("strategy", {})
-    matrix = strategy.get("matrix", {})
-    variants = matrix.get("check")
-    expected_variants = ["python", "portal", "openapi"]
-    assert variants == expected_variants, "checks matrix must cover python, portal, openapi"
+    check_jobs = ["python_checks", "portal_checks", "openapi_checks"]
+    for job_name in check_jobs:
+        job_block = jobs.get(job_name)
+        assert isinstance(job_block, dict), f"Job {job_name} must be defined"
+        needs = job_block.get("needs")
+        assert needs in (None, []), f"Component job {job_name} must not declare dependencies"
 
     build_job = jobs.get("build")
     assert isinstance(build_job, dict), "build job must be defined"
     build_needs = build_job.get("needs")
-    assert build_needs == "checks", "build must depend on the consolidated checks job"
+    assert isinstance(build_needs, list), "build must depend on component jobs"
+    assert set(build_needs) == set(check_jobs), "build must depend on all component jobs"
 
     sequence_pairs = [
         ("build", "ghcr"),
