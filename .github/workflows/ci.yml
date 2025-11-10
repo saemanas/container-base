@@ -208,15 +208,37 @@ jobs:
               exit 0
             }
             cp "$SPEC_PATH" artifacts/ci/openapi_lint/head-openapi.yaml
-            docker run --rm \
+            # Always capture diff output, but do not fail the pipeline on additive changes.
+            if ! docker run --rm \
               -v "$PWD/artifacts/ci/openapi_lint:/data" \
               tufin/oasdiff:latest diff \
               --fail-on-diff \
               /data/base-openapi.yaml \
-              /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log
+              /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/diff.log; then
+              # Preserve exit code for visibility without breaking the job; >1 indicates runtime failure.
+              status=$?
+              if [ "$status" -gt 1 ]; then
+                exit "$status"
+              fi
+            fi
           else
             echo "Unable to resolve base ref $BASE_REF; skipping diff" | tee artifacts/ci/openapi_lint/diff.log
           fi
+
+      - name: Check OpenAPI breaking changes
+        run: |
+          set -euo pipefail
+          if [ ! -f artifacts/ci/openapi_lint/base-openapi.yaml ] || [ ! -f artifacts/ci/openapi_lint/head-openapi.yaml ]; then
+            echo "Base or head OpenAPI spec missing; skipping breaking change check" | tee artifacts/ci/openapi_lint/breaking.log
+            exit 0
+          fi
+
+          docker run --rm \
+            -v "$PWD/artifacts/ci/openapi_lint:/data" \
+            tufin/oasdiff:latest breaking \
+            --fail-on-diff \
+            /data/base-openapi.yaml \
+            /data/head-openapi.yaml 2>&1 | tee artifacts/ci/openapi_lint/breaking.log
 
       - name: Upload OpenAPI artifacts
         if: ${{ always() && env.ACT_SKIP_ARTIFACTS != 'true' && env.ACT_SKIP_ARTIFACTS != '1' }}
@@ -226,6 +248,7 @@ jobs:
           path: |
             artifacts/ci/openapi_lint/lint.log
             artifacts/ci/openapi_lint/diff.log
+            artifacts/ci/openapi_lint/breaking.log
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   build:
