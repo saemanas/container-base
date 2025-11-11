@@ -36,7 +36,6 @@ Thumbs.db
 Dockerfile.*~
 *.tar
 
-# Misc
 logs/
 artifacts/
 *.sqlite3
