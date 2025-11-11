@@ -17,6 +17,7 @@ This repo relies on a layered layout. Most directories already have focused docu
 | `.gitignore`, `.dockerignore` | Rules preventing caches, secrets, logs, and artifacts from entering source control or Docker contexts. | Align with `.env` guidance in `docs/deployment/workflow-secrets.md` and rerun `git status` after adding new generated files. |
 | `.eslintignore`, `.prettierignore` | Additional ignore lists for ESLint/Prettier so generated artifacts (`node_modules`, `.next`, coverage, artifacts) remain outside linters. | Keep them in sync with folder creations mentioned in `docs/project-structure/README.md`. |
 | `artifacts/` | CI-generated logs/metrics (`artifacts/ci`, `artifacts/pdpa`, etc.). | Already gitignored; used in docs for rollback & observability evidence. |
+| `logs/` | Local service logs (`api.log`, `ocr.log`, `portal.log`) emitted by `make logs <service>` and `scripts/run-local.sh`. | Captures structured `{ts,opId,code,duration_ms}` entries and complements CI artifacts; not committed. |
 | `supabase/` | Supabase CLI config (config.toml). | Mirrors Supabase project referenced by scripts. |
 | `.env.example` | Centralized placeholder keys referenced in README/workflow secrets. | Copy to `.env` locally; never commit real secrets. |
 
