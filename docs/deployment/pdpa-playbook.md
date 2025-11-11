@@ -29,4 +29,9 @@
 - **Missing consent evidence**: Trigger API safeguard (`403`) and run `scripts/pdpa/backfill_consent.sh` to reconcile consent records; document outcome in `docs/deployment/observability.md`.
 - **Revoked consent leakage**: Execute Supabase purge function `select pdpa.purge_user_data(user_id)` and confirm with audit log export.
 - **Email/GPS masking regression**: Re-run `pytest tests/backend/test_pdpa_compliance.py` and redeploy only after passing; record fix in release notes.
-- **OCR credential misuse**: Rotate Supabase anon key, redeploy OCR worker, and validate via `pytest tests/worker/test_ocr_pdpa.py`.
+- **OCR credential misuse**: Rotate Supabase anon key, redeploy OCR worker, and validate via `pytest tests/backend/test_ocr_pdpa.py`.
+
+## PDPA simulation rehearsal
+
+- Run `scripts/run-retention-job.sh` with `PDPA_RETENTION_FORCE_FAILURE=1` to emulate a retention gate block without touching real Supabase events. The script writes a structured artifact under `artifacts/pdpa/` and exits with `1`, matching the PDPA failure guard in `scripts/run-all-checks.sh`.
+- Export the required secrets (`SUPABASE_PROJECT_REF`, `SUPABASE_SERVICE_ROLE_KEY`) before running, then inspect the artifact to confirm `status: failure` and the `message` referencing `"Simulated PDPA retention gate failure"`. This provides reproducible evidence for `tests/integration/test_ci_pdpa_failure.py` and workflow audits.

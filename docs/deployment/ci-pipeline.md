@@ -16,9 +16,9 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 - **Capacity guardrail**: monitor Actions storage (default 10 GB for free tier). Old caches are removed via LRU, but periodically clear stale entries with `gh cache delete` if needed.
 
 ## Stages
-1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Both jobs must succeed before downstream stages proceed.
-2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution.
-3. **OpenAPI Lint & Diff** – Lint the contract with `@redocly/cli@2.11.0` and compare against the base branch using `openapi-diff@0.24.1`. Because the diff tool only understands OpenAPI 3.0.x, CI copies both the base and head specs into `artifacts/ci/openapi_lint/` and temporarily rewrites the document header from `openapi: 3.1.0` to `openapi: 3.0.3` prior to comparison. The original sources remain untouched; the normalization only happens inside the CI artifact directory before the diff runs.
+1. **Lint (parallel)** – Ruff and ESLint execute concurrently. Ruff covers the API/OCR Python surfaces via matrix jobs, while ESLint validates the portal stack with cached dependencies. Immediately after ESLint completes, CI runs `python3 scripts/check-portal-stack.py` so portal dependencies stay anchored on Next.js 16.0.1 + React 19.0.0 before the remaining stages. Both jobs must succeed before downstream stages proceed.
+2. **Pytest** – Executes service test suite and applies PDPA regression checks (`tests/backend/test_pdpa_compliance.py`) for API. This job declares `needs: [ruff, eslint]` so failures in either lint job gate test execution. The Pytest logs (e.g., `artifacts/ci/pytest/api.log`) are tagged with structured metadata (`{ ts, opId, code, duration_ms }`) to document PDPA consent flows and retention job validation.
+3. **OpenAPI Lint & Diff** – Lint the contract with `@redocly/cli@2.11.0` and compare against the base branch using `openapi-diff@0.24.1`. Because the diff tool only understands OpenAPI 3.0.x, CI copies both the base and head specs into `artifacts/ci/openapi_lint/` and temporarily rewrites the document header from `openapi: 3.1.0` to `openapi: 3.0.3` prior to comparison. The original sources remain untouched; the normalization only happens inside the CI artifact directory before the diff runs. The lint/diff outputs are retained with structured metadata and zipped alongside other stage logs to prove contract compliance, PDPA evidence (e.g., consent traceability), and automated rollback readiness.
 4. **Build** – Docker image builds for API/OCR via Buildx
 5. **GHCR** – Build and push images to GitHub Container Registry (authenticate with PAT secret `PROJECT_TOKEN`)
 6. **Tag Deploy** – Summary/notification step to close the loop and upload `artifacts/ci/tag_deploy/pipeline-summary.txt` with a 90-day retention window for compliance evidence
@@ -43,7 +43,7 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 
 ## Common Operations
 - **Dry run locally**: `act pull_request -W .github/workflows/ci.yml`
-- **Spin up local stack**: `bash scripts/run-local.sh` boots API, OCR worker, and portal (when configured) with Supabase credentials from the environment. Use this when validating end-to-end flows before tagging a release.
+- **Spin up local stack**: `make build` builds and starts the Docker Compose services (API, OCR worker, portal, mobile) using the shared root `.env` configuration.
 - **Sanity-check CI prerequisites**: `bash scripts/validate-ci.sh` verifies required tooling/variables and emits structured JSON logs so missing dependencies are caught before pushing branches.
 - **Investigate failure**: Inspect the failing job log; re-run selected jobs from GitHub UI if inputs unchanged
 - **Upgrade dependencies**: Update `requirements.txt`, `package-lock.json`, re-run `npm install`, and adjust caches as needed
@@ -64,7 +64,6 @@ The CI workflow (`.github/workflows/ci.yml`) enforces the mandated sequence Ruff
 | Script | Purpose | Primary doc |
 | --- | --- | --- |
 | `scripts/run-all-checks.sh` | Run Ruff, Pytest, and portal ESLint before committing. | `docs/deployment/ci-baselines.md` |
-| `scripts/run-local.sh` | Launch API, OCR worker, portal, and optional mobile dev servers for manual QA. | This document (Common Operations) |
 | `scripts/validate-ci.sh` | Assert required tooling, config files, and env vars exist before CI. | This document (Common Operations) |
 | `scripts/check-portal-stack.py` | Ensure portal dependencies stay on mandated Next.js/React majors. | This document (Stages & Common Operations) |
 | `scripts/measure-ci.sh` | Capture local CI stage timing snapshots and append evidence tables. | `docs/deployment/ci-baselines.md` |

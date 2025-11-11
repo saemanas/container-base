@@ -158,7 +158,11 @@ All metrics must be validated using **open-source tools**.
 - **CI Pipeline Flow:**
 
     Ruff → ESLint → Pytest → OpenAPI lint (Redocly CLI) → Build → GHCR Push → Tag Deploy
-    
+
+- Immediately after ESLint, CI must run `python3 scripts/check-portal-stack.py` so the portal dependency tree stays anchored on Next.js 16.0.1 + React 19.0.0 prior to builds.
+- OpenAPI lint stage archives both lint results and normalized spec diffs (`artifacts/ci/openapi_lint`) to prove compliance with Redocly CLI and `oasdiff` diff/breaking change checks.
+- Every CI artifact (Ruff, ESLint, Pytest, OpenAPI lint, Build, GHCR, Tag Deploy) includes structured logs (`{ ts, opId, code, duration_ms }`) and is retained for ≥90 days, forming the PDPA evidence trail for consent gating, retention jobs, and rollback drills.
+
 - **Release Control:**
     - Auto **Release Draft** after main merge.
     - Tag (vX.Y.Z) triggers **Prod deploy**.
@@ -200,6 +204,11 @@ Any omission of tests or run commands = **incomplete output**.
 | ✅ CI/CD | Tag → GHCR → Cloud Run verified |
 
 ---
+
+## **4.10 Documentation Alignment**
+
+- Operational runbooks in `docs/deployment/ci-pipeline.md`, `docs/deployment/workflow-secrets.md`, `docs/deployment/rollback-playbook.md`, and `docs/deployment/observability.md` describe the actionable steps that implement this Instruction; keep them updated so they mirror these criteria.
+- For workflow-level detail, consult `docs/github/workflows/README.md` and the per-workflow docs (`docs/github/workflows/ci.md`, `cd-api.md`, `cd-ocr.md`, `cd-portal.md`) that translate this Instruction directly into GitHub Actions steps.
 
 ## **5. Expert Agents — Operational Mindset**
 
