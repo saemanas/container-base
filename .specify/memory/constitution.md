@@ -27,6 +27,8 @@ Non-negotiable rules:
 - Execution order is fixed: **Spec → Plan → Tasks → Implementation → Tests → Verification**. Each stage must be committed (research.md, plan.md, tasks.md, contracts/, quickstart.md) before code is authored or merged.
 - Before running `/specify`, `/clarify`, `/plan`, `/tasks`, `/analyze`, `/implement`, or writing code, agents MUST verify Context7 MCP availability; if unreachable, log the outage and associated risks in the work product.
 - All outputs (code, docs, commits, logs) stay English-only, include summaries, file paths, runnable commands, and respect repository i18n policies.
+- Operational guidelines reside in `docs/` (deployment runbooks, workflow overviews, script/test/app summaries) and must be updated whenever the corresponding file or subsystem changes so the code/documentation duo stays aligned.
+- Every file addition/deletion/modification must be mirrored in the relevant `docs/` subtree (`docs/deployment/`, `docs/src/apps/`, `docs/scripts/`, `docs/tests/`, `docs/github/workflows/`, `docs/project-structure/README.md`, etc.) to keep documentation aligned with the codebase.
 Rationale: Enforcing a shared cadence keeps solo agents aligned with the triad (Product, Platform, Experience) and preserves institutional memory.
 
 ### Test-First Observability

@@ -6,10 +6,8 @@ This playbook supersedes prior drafts and folds in the `/refs/docs` canon that o
 
 ## 1. Source Graph & Truth Hierarchy
 - **Primary references** (must be cited in specs, PRDs, and tickets):
-  - `refs/docs/CB-Instruction-v1.0.0-en-US.md` — execution charter & collaboration ritual.
-  - `refs/docs/CB-Service-Plan-v1.0.0-en-US.md` — product/service blueprint for the Thai launch.
-  - `refs/docs/CB-MVP-Stacks-v1.0.0-en-US.md` — runtime + tooling baselines.
-- **Operational guides**: `development.md`, `deployment.md`, `.github/workflows/*`, `scripts/*`, `docs/patterns/*`, `contracts/*`.
+- `refs/docs/` (CB-Instruction, CB-Service-Plan, CB-MVP-Stacks, CB-UX-Design, CB-MiniOps) — execution charter, Thai launch blueprint, runtime/tooling baselines, UX patterns, and operations playbook.
+- **Operational guides**: `refs/docs/` for governance, `docs/deployment/` runbooks, `docs/github/workflows/*`, `docs/scripts/*`, `docs/tests/*`, `docs/src/apps/*`, and `docs/project-structure/README.md`.
 - **Spec-kit rule**: Before running `/specify`, `/clarify`, `/plan`, `/tasks`, `/analyze`, `/implement`, or writing code, ping the Context7 MCP endpoint. If reachable, pull the relevant doc section and cite it; if unavailable, log the outage, risks, and mitigation.
 - **Language & CLI policy**: Repository artifacts stay English-only (keys, comments, logs). Localization values may include Thai. Any command output shared by agents must be described in Korean.
 - **Comment discipline**: Every code submission MUST include concise English comments that explain intent, invariants, and edge cases. Contributions lacking explanatory comments are rejected during review.
@@ -40,10 +38,10 @@ Agents operate as a single swarm: spec everything, cite sources, and treat OpenA
 
 ## 4. Operating Protocol
 1. **Spec → Plan → Tasks → Implementation → Tests → Verification**. No code without a spec excerpt from `/refs/docs`.
-2. Maintain weekly Product/Platform/Experience triads, bi-weekly ops review, monthly compliance audit.
-3. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + OpenAPI Lint, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
-4. Git discipline: `main` (prod), `develop` (stg), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages. GitHub branch protection enforces strict status checks, linear history, no force pushes/deletions, admin enforcement, and at least one approving review on `main`/`develop`.
+2. Deliverables must: (a) run with Docker Compose, (b) pass Ruff + ESLint + Pytest + OpenAPI Lint, (c) emit structured logs `{ ts, opId, code, duration_ms }`.
+3. Git discipline: `main` (prod), `develop` (stg), `feature/<topic>` (task). Commits follow Conventional Commit ≤72 chars. Pre-push hooks block force pushes and invalid messages. GitHub branch protection enforces strict status checks, linear history, no force pushes/deletions, admin enforcement, and at least one approving review on `main`/`develop`.
 - Branch workflow: `main` and `develop` are protected; working branches follow the spec-kit naming convention (`NNN-some-spec`, e.g., `001-lowcost-cicd-infra`). Branch from `develop`, complete spec tasks, and merge back via reviewed PRs.
+4. Every file addition/deletion/modification must be mirrored in the appropriate `docs/` subdirectory (e.g., `docs/deployment/`, `docs/src/apps/`, `docs/scripts/`, `docs/tests/`, `docs/github/workflows/`, `docs/project-structure/README.md`) to keep documentation and code in lockstep.
 5. CLI & documentation outputs: code/comments English; CLI summaries Korean; tests and commands shared with teammates must be runnable verbatim.
 
 ---
