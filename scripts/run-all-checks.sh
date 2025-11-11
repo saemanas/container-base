@@ -8,25 +8,38 @@ ARTIFACT_DIR="${RUN_ALL_CHECKS_ARTIFACT_DIR:-${ROOT_DIR}/artifacts/ci}"
 TIMESTAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
 SUMMARY_FILE="${ARTIFACT_DIR}/local-summary-${TIMESTAMP}.md"
 
+PYTHON_BIN="${PY_ENV}/bin/python"
+RUFF_BIN="${PY_ENV}/bin/ruff"
+
 log() {
   printf '[run-all-checks] %s\n' "$1"
 }
 
 timestamp_ms() {
-  "${PY_ENV}/bin/python" - <<'PY'
+  "${PYTHON_BIN}" - <<'PY'
 import time
 print(int(time.time() * 1000))
 PY
 }
 
 if [[ ! -d "${PY_ENV}" ]]; then
-  log "Python virtualenv not found at ${PY_ENV}; create it before running."
+  if command -v python3 >/dev/null 2>&1 && command -v ruff >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+    RUFF_BIN="$(command -v ruff)"
+    log "Python virtualenv not found at ${PY_ENV}; falling back to $(basename "${PYTHON_BIN}") from PATH."
+  else
+    log "Python virtualenv not found at ${PY_ENV}; create it before running."
+    exit 1
+  fi
+fi
+
+if [[ ! -x "${PYTHON_BIN}" ]]; then
+  log "Python interpreter not executable at ${PYTHON_BIN}."
   exit 1
 fi
 
-RUFF_BIN="${PY_ENV}/bin/ruff"
 if [[ ! -x "${RUFF_BIN}" ]]; then
-  log "Ruff not found at ${RUFF_BIN}. Install it with 'python -m pip install ruff' inside the virtualenv."
+  log "Ruff not found at ${RUFF_BIN}. Install it inside the virtualenv or ensure it is on PATH."
   exit 1
 fi
 
@@ -67,7 +80,7 @@ run_step() {
 }
 
 run_step "Ruff lint (Python)" "${RUFF_BIN}" check "${ROOT_DIR}/src/apps/api" "${ROOT_DIR}/src/apps/ocr"
-run_step "Pytest" "${PY_ENV}/bin/python" -m pytest "${ROOT_DIR}/tests" --maxfail=1 --disable-warnings -q
+run_step "Pytest" "${PYTHON_BIN}" -m pytest "${ROOT_DIR}/tests" --maxfail=1 --disable-warnings -q
 run_step "ESLint (portal)" bash -c "cd '${ROOT_DIR}/src/apps/portal' && npm run lint"
 
 log "All checks completed successfully. Summary stored at ${SUMMARY_FILE}."
