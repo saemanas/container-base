@@ -23,8 +23,12 @@ def test_production_job_triggers_pdpa_retention_job(workflow_path: Path) -> None
     """Production jobs must invoke the retention script with PDPA/Supabase metadata."""
 
     data = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
-    production_job = data.get("jobs", {}).get("deploy-production")
-    assert isinstance(production_job, dict), "deploy-production job must be defined"
+    jobs = data.get("jobs", {})
+
+    # Workflows may expose either a dedicated `deploy-production` job or a
+    # single `deploy` job that gates behaviour via environment inputs.
+    production_job = jobs.get("deploy-production") or jobs.get("deploy")
+    assert isinstance(production_job, dict), "Production-capable deploy job must be defined"
 
     steps = production_job.get("steps", [])
 

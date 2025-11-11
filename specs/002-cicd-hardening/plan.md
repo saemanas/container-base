@@ -57,6 +57,13 @@ repo/
 
 **Structure Decision**: Feature spans shared CI/CD assets under `.github/workflows`, deployment runbooks in `docs/deployment`, automation scripts, and service directories to guarantee coordinated releases.@README.md#5-116 @specs/002-cicd-hardening/spec.md#33-117
 
+## Progress Tracker
+
+| Phase / Story | Status | Evidence | Next Steps |
+|---------------|--------|----------|------------|
+| Phase 5 / US3 (Rollback + Observability) | Completed | `tests/integration/test_rollback_drill.py` and `tests/backend/test_pdpa_retention_job.py` enforce rollback MTTR ≤10m and PDPA retention tracing; `docs/deployment/observability.md` now documents rollout metrics, structured `{ts, opId, code, duration_ms}` logging, retention job artifacts, and notification archives. | Monitor production rollback runs to ensure artifacts land in `artifacts/pdpa/`, `artifacts/notifications/`, and `artifacts/quotas/` as described in the rollback drill checklist. |
+| Phase 6 / Polish | Nearing completion | `docs/deployment/ci-pipeline.md` describes the full CI sequence, Redocly lint/diff, and portal stack guard; README/quickstart highlight shared scripts; `scripts/check-free-tier.py` and `scripts/run-retention-job.sh` produce artefacts referenced in observability guidance. | Finalize release checklist entries (`docs/deployment/release-checklist.md`) with links to structured-log artifacts and confirm GitHub environments contain the documented PDPA secrets. |
+
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |

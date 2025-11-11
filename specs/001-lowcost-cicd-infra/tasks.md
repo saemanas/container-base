@@ -102,7 +102,7 @@
 - [X] T026 [P] [US3] Implement quota alert simulation in `tests/integration/test_cost_guardrails.py`
 - [X] T027 [P] [US3] Add secret presence test in `tests/backend/test_secrets_catalog.py`
 - [X] T043 [P] [US3] Add PDPA consent and masking tests in `tests/backend/test_pdpa_compliance.py`
-- [X] T044 [P] [US3] Add OCR credential isolation tests in `tests/worker/test_ocr_pdpa.py`
+- [X] T044 [P] [US3] Add OCR credential isolation tests in `tests/backend/test_ocr_pdpa.py`
 
 ### Implementation for User Story 3
 

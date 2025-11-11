@@ -23,12 +23,14 @@ def _run_ci_check(env: dict[str, str]) -> subprocess.CompletedProcess[str]:
 
 def _pdpa_failure_env() -> dict[str, str]:
     root = pathlib.Path(__file__).resolve().parents[2]
-    return {
+    env = {
         "SUPPRESS_CONSENT_CHECK": "0",
         "PDPA_FORCE_FAILURE": "1",
         "PATH": str(pathlib.Path.cwd()),
         **dict.fromkeys(_inherit_env_keys(["PATH", "HOME"]), ""),
     }
+    env["PATH"] = subprocess.os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin")
+    return env
 
 
 def _inherit_env_keys(keys: Iterable[str]) -> Iterable[str]:
@@ -40,7 +42,6 @@ def _inherit_env_keys(keys: Iterable[str]) -> Iterable[str]:
 
 @pytest.mark.slow
 @pytest.mark.integration
-@pytest.mark.skip("Placeholder until CI script supports PDPA failure simulation")
 def test_pdpa_failure_blocks_pipeline() -> None:
     """When PDPA checks fail, CI must stop before reaching GHCR/tag stages."""
     result = _run_ci_check(_pdpa_failure_env())

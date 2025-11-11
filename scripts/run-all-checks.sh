@@ -12,6 +12,13 @@ log() {
   printf '[run-all-checks] %s\n' "$1"
 }
 
+timestamp_ms() {
+  "${PY_ENV}/bin/python" - <<'PY'
+import time
+print(int(time.time() * 1000))
+PY
+}
+
 if [[ ! -d "${PY_ENV}" ]]; then
   log "Python virtualenv not found at ${PY_ENV}; create it before running."
   exit 1
@@ -42,12 +49,12 @@ run_step() {
   shift
   log "Running ${label}"
   local start end duration status
-  start=$(date +%s%3N)
+  start=$(timestamp_ms)
   set +e
   "$@"
   status=$?
   set -e
-  end=$(date +%s%3N)
+  end=$(timestamp_ms)
   duration=$((end - start))
 
   if [[ ${status} -eq 0 ]]; then

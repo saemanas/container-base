@@ -67,6 +67,8 @@ ARTIFACT_FILE="${ARTIFACT_DIR}/${OP_ID}-${RUN_ID}.json"
 
 MASKED_PROJECT_REF="${SUPABASE_PROJECT_REF:0:6}***"
 MASKED_SERVICE_KEY="${SUPABASE_SERVICE_ROLE_KEY:0:4}***"
+STATUS="success"
+MESSAGE="Supabase retention job trigger logged"
 
 if command -v supabase >/dev/null 2>&1; then
   # Note: Supabase CLI call intentionally no-op for dry runs; real workflows rely on service logs.
@@ -76,6 +78,12 @@ else
   echo "Supabase CLI not found; writing placeholder confirmation log." >&2
 fi
 
+if [[ "${PDPA_RETENTION_FORCE_FAILURE:-0}" == "1" ]]; then
+  STATUS="failure"
+  MESSAGE="Simulated PDPA retention gate failure for ${RETENTION_ENVIRONMENT}/${OP_ID}"
+  echo "::error ::PDPA retention gate simulated failure (opId=${OP_ID})" >&2
+fi
+
 duration_ms=$((SECONDS * 1000))
 
 cat >"${ARTIFACT_FILE}" <<EOF
@@ -83,13 +91,18 @@ cat >"${ARTIFACT_FILE}" <<EOF
   "ts": "${TIMESTAMP}",
   "opId": "${OP_ID}",
   "code": "pdpa-retention",
+  "status": "${STATUS}",
   "duration_ms": ${duration_ms},
   "environment": "${RETENTION_ENVIRONMENT}",
   "tag": "${RETENTION_TAG}",
   "supabase_project_ref": "${MASKED_PROJECT_REF}",
   "supabase_service_role_key": "${MASKED_SERVICE_KEY}",
-  "message": "Supabase retention job trigger logged"
+  "message": "${MESSAGE}"
 }
 EOF
 
 echo "Retention artifact written to ${ARTIFACT_FILE}" >&2
+
+if [[ "${STATUS}" == "failure" ]]; then
+  exit 1
+fi

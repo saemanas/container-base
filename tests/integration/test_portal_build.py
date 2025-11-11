@@ -19,7 +19,20 @@ def test_portal_package_json_exists() -> None:
 
 
 @pytest.mark.skipif(not PORTAL_ROOT.exists(), reason="Portal app is not initialized")
-def test_portal_env_example_exists() -> None:
-    """Verify that the portal env example file is present for deployments."""
-    env_example = PORTAL_ROOT / ".env.example"
-    assert env_example.exists(), "Portal .env.example missing"
+def test_root_env_example_includes_portal_values() -> None:
+    """Root env example must exist and contain portal-specific placeholders."""
+
+    env_example = REPO_ROOT / ".env.example"
+    assert env_example.exists(), "Root .env.example missing"
+
+    contents = env_example.read_text(encoding="utf-8")
+    required_keys = (
+        "NEXT_PUBLIC_API_BASE_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "NEXT_PUBLIC_LINE_REDIRECT",
+    )
+    for key in required_keys:
+        assert (
+            key in contents
+        ), f"Root .env.example missing portal placeholder: {key}"

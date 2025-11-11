@@ -17,9 +17,10 @@ ROLLBACK_WORKFLOWS = [
 def _load_production_job(workflow_path: Path) -> dict:
     content = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
     jobs = content.get("jobs", {})
-    assert "deploy-production" in jobs, f"Workflow missing deploy-production job: {workflow_path}"
-    production_job = jobs["deploy-production"]
-    assert isinstance(production_job, dict), "deploy-production job must be a mapping"
+    production_job = jobs.get("deploy-production") or jobs.get("deploy")
+    assert isinstance(
+        production_job, dict
+    ), f"Production-capable deploy job missing: {workflow_path}"
     return production_job
 
 
@@ -30,7 +31,7 @@ def test_production_job_enforces_rollback_timeout(workflow_path: Path) -> None:
     timeout_minutes = production_job.get("timeout-minutes")
     assert isinstance(
         timeout_minutes, (int, float)
-    ), "deploy-production job must declare timeout-minutes as per US3 spec"
+    ), "Production deploy job must declare timeout-minutes as per US3 spec"
     assert timeout_minutes <= 10, "Rollback timeout must be ≤10 minutes"
 
 
